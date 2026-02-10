@@ -507,6 +507,103 @@ input[type="color"] {
     transform: scale(1.1);
     box-shadow: 0 0 0 2px rgba(255,255,255,0.8) inset;
 }
+
+/* Info Icon Styling */
+.indicator-info-btn {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #f0f0f0;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    font-style: italic;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-right: 8px;
+    border: 1px solid #ddd;
+}
+.indicator-info-btn:hover {
+    background: #3366ff;
+    color: #fff;
+    border-color: #3366ff;
+}
+
+/* Info Overlay */
+.indicator-info-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(5px);
+    z-index: 3005;
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 12px;
+}
+.indicator-info-overlay.visible {
+    transform: translateX(0);
+}
+.indicator-info-title {
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 5px;
+    color: #333;
+}
+.indicator-info-dev {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 20px;
+}
+.indicator-info-links {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+.indicator-info-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
+    background: #f8f9fa;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #333;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+.indicator-info-link:hover {
+    background: #eef2ff;
+    border-color: #cbd5e1;
+    color: #3366ff;
+}
+.indicator-info-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    cursor: pointer;
+    font-size: 18px;
+    color: #999;
+}
+.indicator-info-close:hover {
+    color: #333;
+}
 </style>
 
 <script>
@@ -942,8 +1039,29 @@ input[type="color"] {
 
         panel.innerHTML = `
             <div class="indicator-settings-header">
-                <span>Display Settings</span>
+                <div style="display: flex; align-items: center;">
+                    <div class="indicator-info-btn" id="indicatorInfoBtn">i</div>
+                    <span>Display Settings</span>
+                </div>
                 <span style="cursor:pointer;" onclick="this.closest('.indicator-settings-panel').classList.remove('visible')">✕</span>
+            </div>
+
+            <!-- Developer Info Overlay -->
+            <div class="indicator-info-overlay" id="indicatorInfoOverlay">
+                <div class="indicator-info-close" id="indicatorInfoClose">✕</div>
+                <div class="indicator-info-title">Quarto Progress Indicator</div>
+                <div class="indicator-info-dev">Developed by O. Furkan Coban</div>
+                
+                <div class="indicator-info-links">
+                    <a href="https://github.com/ofurkancoban/QuartoProgressIndicator" target="_blank" class="indicator-info-link">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                        GitHub Repository
+                    </a>
+                    <a href="https://github.com/ofurkancoban" target="_blank" class="indicator-info-link">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22v3.293c0 .319.192.694.805.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                        Follow on GitHub
+                    </a>
+                </div>
             </div>
             
             <div class="indicator-setting-item">
@@ -1439,6 +1557,15 @@ progress-indicator:
         jsonGroup.appendChild(importJsonBtn);
         panel.appendChild(jsonGroup);
         panel.appendChild(fileInput);
+
+        // 8.6 Info Overlay Logic
+        const infoBtn = panel.querySelector('#indicatorInfoBtn');
+        const infoOverlay = panel.querySelector('#indicatorInfoOverlay');
+        const infoClose = panel.querySelector('#indicatorInfoClose');
+
+        infoBtn.addEventListener('click', () => infoOverlay.classList.add('visible'));
+        infoClose.addEventListener('click', () => infoOverlay.classList.remove('visible'));
+
             // 8. Persistence (LocalStorage)
             function saveSettings() {
                 const settings = {
