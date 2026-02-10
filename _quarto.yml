@@ -3,8 +3,7 @@ project:
 
 format:
   revealjs:
-    extensions:
-      - _extensions/ofurkancoban/progress-indicator/
+    include-after-body: _extensions/ofurkancoban/progress-indicator/progress-indicator.html
     progress: false # Hide Reveal.js native progress bar
     # You can also set project-wide defaults for the indicator here
     include-in-header:
