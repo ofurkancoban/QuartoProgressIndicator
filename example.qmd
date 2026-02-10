@@ -68,7 +68,7 @@ Add flair to your active slide with CSS animations:
 ## Installation
 
 ```bash
-quarto add ofurkancoban/QuartoProgressIndicatorExtension
+quarto add ofurkancoban/QuartoProgressIndicator
 ```
 
 ## Setup in YAML

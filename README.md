@@ -20,7 +20,7 @@ This extension is built with **pure JavaScript and CSS**, requiring **no Lua dep
 Add the extension to your project:
 
 ```bash
-quarto add ofurkancoban/QuartoProgressIndicatorExtension
+quarto add ofurkancoban/QuartoProgressIndicator
 ```
 
 ## Usage
