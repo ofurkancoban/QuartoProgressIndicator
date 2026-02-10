@@ -10,7 +10,9 @@ This extension is built with **pure JavaScript and CSS**, requiring **no Lua dep
 - **Interactive Settings Menu**: Configure your indicator live during the presentation.
 - **Visual Theme Palettes**: Choose from 6+ professional themes (Nord, Indigo, Emerald, Slate, Rose, Cyber).
 - **Dynamic Animations**: Pulse, Glow, or Bounce effects for the active slide dot.
-- **Smart Persistence**: All settings (color, size, theme, etc.) are saved in your browser and persist across reloads.
+- **Smart Persistence**: All settings (color, size, theme, tooltips, etc.) are saved in your browser and persist across reloads.
+- **Tooltip Toggle**: Show or hide slide titles on hover with a simple checkbox.
+- **Developer Info Overlay**: Access metadata and social links directly from the settings panel.
 - **Keyboard Shortcuts**: Instant access to configuration and visibility controls.
 - **Zero Lua Dependency**: Works purely in the browser environment.
 - **Responsive Design**: Automatically adapts to different screen sizes and light/dark modes.
