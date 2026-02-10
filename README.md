@@ -3,7 +3,7 @@
 A lightweight, premium progress indicator for Quarto Reveal.js presentations.
 This extension is built with **pure JavaScript and CSS**, requiring **no Lua dependency**, making it easy to install and highly performant.
 
-![Quarto Progress Indicator](https://cdn.jumpshare.com/preview/Tm5HtCCTB01HqtcDvKp56grF8lfW7iKN1MBLhaJrXaww7uXYQ-X4Xz09tUrOsZJj_oTdJyRmiWmOy1MneZDOc1HKJxY4IR2_5KPbYOQel_Q)
+![Quarto Progress Indicator](https://github.com/user-attachments/assets/5ff51666-465b-4087-ad51-f8c699a1b11e)
 
 ## Key Features
 
