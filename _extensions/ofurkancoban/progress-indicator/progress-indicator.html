@@ -521,7 +521,6 @@ input[type="color"] {
     justify-content: center;
     font-size: 12px;
     font-weight: bold;
-    font-style: italic;
     cursor: pointer;
     transition: all 0.2s ease;
     margin-right: 8px;
@@ -664,10 +663,17 @@ input[type="color"] {
 
         // Tooltip Element - Append to BODY to avoid clipping
         let tooltip = null;
+        
+        function createTooltip() {
+            if (!tooltip) {
+                tooltip = document.createElement('div');
+                tooltip.className = 'indicator-tooltip';
+                document.body.appendChild(tooltip);
+            }
+        }
+
         if (showTooltips) {
-            tooltip = document.createElement('div');
-            tooltip.className = 'indicator-tooltip';
-            document.body.appendChild(tooltip); // Append to body
+            createTooltip();
         }
 
         let sections = [];
@@ -783,8 +789,9 @@ input[type="color"] {
                     }, true);
                 }
 
-                if (showTooltips) {
+                if (true) { // Always add listener, check flag inside
                     dot.addEventListener('mouseenter', (e) => {
+                        if (!showTooltips) return; // Check flag
                         tooltip.innerText = dotData.title;
                         tooltip.classList.add('visible');
                         const rect = dot.getBoundingClientRect();
@@ -1041,7 +1048,9 @@ input[type="color"] {
         panel.innerHTML = `
             <div class="indicator-settings-header">
                 <div style="display: flex; align-items: center;">
-                    <div class="indicator-info-btn" id="indicatorInfoBtn">i</div>
+                    <div class="indicator-info-btn" id="indicatorInfoBtn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    </div>
                     <span>Display Settings</span>
                 </div>
                 <span style="cursor:pointer;" onclick="this.closest('.indicator-settings-panel').classList.remove('visible')">✕</span>
@@ -1146,6 +1155,11 @@ input[type="color"] {
             <div class="indicator-setting-item" style="display: flex; align-items: center; justify-content: space-between;">
                 <span class="indicator-setting-label" style="margin: 0;">Show on Title Slide</span>
                 <input type="checkbox" id="indicatorTitleToggle" style="width: 20px; height: 20px; cursor: pointer;">
+            </div>
+
+            <div class="indicator-setting-item" style="display: flex; align-items: center; justify-content: space-between;">
+                <span class="indicator-setting-label" style="margin: 0;">Show Tooltips</span>
+                <input type="checkbox" id="indicatorTooltipToggle" style="width: 20px; height: 20px; cursor: pointer;">
             </div>
 
             <!-- Slide Visibility Manager -->
@@ -1437,6 +1451,18 @@ input[type="color"] {
             });
         }
         
+        // 0.2 Tooltip Toggle
+        const tooltipToggle = panel.querySelector('#indicatorTooltipToggle');
+        tooltipToggle.checked = showTooltips;
+        
+        tooltipToggle.addEventListener('change', (e) => {
+            showTooltips = e.target.checked;
+            if (showTooltips) {
+                createTooltip();
+            }
+            saveSettings();
+        });
+
         // Populate initially
         renderSlideList();
 
@@ -1588,6 +1614,7 @@ progress-indicator:
                     animation: panel.querySelector('.indicator-btn-group[data-setting="animation"] .active')?.getAttribute('data-value') || 'none',
                     theme: themeContainer.querySelector('.theme-swatch.active')?.getAttribute('data-value') || 'none',
                     hideOnTitle: hideOnTitle,
+                    showTooltips: showTooltips,
                     hiddenSlides: Array.from(hiddenSlides)
                 };
                 localStorage.setItem('quarto-indicator-settings', JSON.stringify(settings));
@@ -1621,9 +1648,25 @@ progress-indicator:
                 }
                 if (s.primaryColor) {
                     root.style.setProperty('--primary-color', s.primaryColor);
-                    root.style.setProperty('--completed-color', s.primaryColor);
+                    // Update picker
+                    panel.querySelector('#indicatorColorPicker').value = s.primaryColor;
+                    panel.querySelector('#colorValueDisplay').innerText = s.primaryColor;
                 }
-                if (s.inactiveColor) root.style.setProperty('--inactive-color', s.inactiveColor);
+                
+                // Tooltip Toggle
+                if (s.showTooltips !== undefined) {
+                    showTooltips = s.showTooltips;
+                    const tooltipToggle = panel.querySelector('#indicatorTooltipToggle');
+                    if (tooltipToggle) tooltipToggle.checked = showTooltips;
+                    
+                    if (showTooltips) {
+                        createTooltip();
+                    } else if (tooltip) {
+                        tooltip.remove();
+                        tooltip = null;
+                    }
+                }
+
                 if (s.size) {
                     root.style.setProperty('--dot-size', s.size);
                     const slider = panel.querySelector('#indicatorSizeSlider');
