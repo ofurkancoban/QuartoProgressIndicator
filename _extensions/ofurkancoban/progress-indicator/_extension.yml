@@ -1,0 +1,8 @@
+title: Progress Indicator
+author: O. Furkan Coban
+version: 1.0.0
+quarto-version: ">=1.0.0"
+contributes:
+  formats:
+    revealjs:
+      include-after-body: progress-indicator.html

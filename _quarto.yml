@@ -1,0 +1,18 @@
+project:
+  type: website # Or default, but website is common for groups of slides
+
+format:
+  revealjs:
+    include-after-body: _extensions/ofurkancoban/progress-indicator/progress-indicator.html
+    # You can also set project-wide defaults for the indicator here
+    include-in-header:
+      - text: |
+          <style>
+            :root {
+              --progress-position: bottom;
+              --primary-color: #3366ff;
+              --completed-color: #3366ff;
+              --dot-size: 8px;
+              --section-spacing: 15px;
+            }
+          </style>

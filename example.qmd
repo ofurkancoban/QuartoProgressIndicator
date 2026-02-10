@@ -1,0 +1,124 @@
+---
+title: "Quarto Progress Indicator"
+subtitle: "Interactive & Professional Progress Tracking"
+author: "@ofurkancoban"
+format:
+  revealjs:
+    theme: simple
+    transition: slide
+    slide-number: true
+    controls: true
+    progress: false
+    center: true
+    highlight-style: github
+    code-fold: false
+    preview-links: auto
+---
+
+# Introduction {data-section="Introduction"}
+
+## About this Extension
+
+This extension adds a **premium**, **interactive** progress indicator to your Quarto presentations.
+
+::: {.callout-tip}
+## Key Feature
+It runs purely on **JavaScript & CSS** with zero Lua dependencies!
+:::
+
+[View on GitHub](https://github.com/ofurkancoban/quarto-progress-indicator)
+
+## How It Works
+
+1.  **Tracking**: Listens to Reveal.js events.
+2.  **Grouping**: Groups slides by sections.
+3.  **Interaction**: Fully interactive dots and settings.
+
+# Interactive Settings {data-section="Interactive Features"}
+
+## Display Settings Panel
+
+Press <kbd>c</kbd> anywhere in the presentation to open the **Configuration Menu**.
+
+- **Position**: Toggle Top/Bottom.
+- **Alignment**: Left/Center/Right.
+- **Sliders**: Adjust dot size and spacing live.
+- **Visibility**: Toggle indicator on/off for specific slides.
+
+## Theme Palettes
+
+Choose from a variety of **Professional Palettes** using visual swatches:
+
+- **Nord**: Clean Arctic Blue
+- **Indigo**: Modern Purple/Blue
+- **Emerald**: Muted Professional Green
+- **Slate**: Corporate Grey/Blue
+- **Cyber**: Vibrant Modern Cyan
+
+## Active Animations
+
+Add flair to your active slide with CSS animations:
+
+- **Pulse**: Soft breathing effect.
+- **Glow**: Subtle luminous highlight.
+- **Bounce**: Playful jumping dot.
+
+# Configuration {data-section="Setup"}
+
+## Installation
+
+```bash
+quarto add ofurkancoban/QuartoProgressIndicatorExtension
+```
+
+## Setup in YAML
+
+```yaml
+format:
+  revealjs:
+    include-after-body: _extensions/ofurkancoban/progress-indicator/progress-indicator.html
+    progress-indicator:
+      position: "bottom"
+      style: "dots"
+```
+
+## CSS Customization
+
+```css
+:root {
+  --primary-color: #3b60e4;
+  --inactive-color: #bbbbbb;
+  --dot-size: 8px;
+}
+```
+
+# Shortcuts & Tips {data-section="Tips"}
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+| :--- | :--- |
+| <kbd>c</kbd> | Open Display Settings |
+| <kbd>x</kbd> | Hide/Show Indicator |
+
+## Hidden Slides
+
+Add the `.hide-progress` class to any slide to hide the indicator:
+
+```markdown
+## QA Slide {.hide-progress}
+```
+
+# Conclusion {data-section="Conclusion"}
+
+## Summary
+
+-   **Zero** Lua dependencies.
+-   **Visual** theme selection.
+-   **Smart** persistence across reloads.
+-   **Easy** installation & extraction.
+
+## Thank You!
+
+Check out my other projects at:
+[github.com/ofurkancoban](https://github.com/ofurkancoban)
