@@ -1,7 +1,7 @@
 ---
 title: "Quarto Progress Indicator"
 subtitle: "Interactive & Professional Progress Tracking"
-author: "@ofurkancoban"
+author: "ofurkancoban"
 format:
   revealjs:
     theme: simple

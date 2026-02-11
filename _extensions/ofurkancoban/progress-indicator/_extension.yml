@@ -1,8 +1,8 @@
 title: Progress Indicator
-author: O. Furkan Coban
+author: ofurkancoban
 url: https://github.com/ofurkancoban/QuartoProgressIndicator
 website: https://github.com/ofurkancoban/QuartoProgressIndicator
-version: 1.0.3
+version: 1.0.4
 quarto-version: ">=1.0.0"
 contributes:
   formats:

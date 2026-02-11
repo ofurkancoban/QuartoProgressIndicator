@@ -1,0 +1,86 @@
+[
+  {
+    "objectID": "example.html#about-this-extension",
+    "href": "example.html#about-this-extension",
+    "title": "Quarto Progress Indicator",
+    "section": "About this Extension",
+    "text": "About this Extension\nThis extension adds a premium, interactive progress indicator to your Quarto presentations.\n\n\n\n\n\n\nKey Feature\n\n\nIt runs purely on JavaScript & CSS with zero Lua dependencies!\n\n\n\nView on GitHub"
+  },
+  {
+    "objectID": "example.html#how-it-works",
+    "href": "example.html#how-it-works",
+    "title": "Quarto Progress Indicator",
+    "section": "How It Works",
+    "text": "How It Works\n\nTracking: Listens to Reveal.js events.\nGrouping: Groups slides by sections.\nInteraction: Fully interactive dots and settings."
+  },
+  {
+    "objectID": "example.html#display-settings-panel",
+    "href": "example.html#display-settings-panel",
+    "title": "Quarto Progress Indicator",
+    "section": "Display Settings Panel",
+    "text": "Display Settings Panel\nPress c anywhere in the presentation to open the Configuration Menu.\n\nPosition: Toggle Top/Bottom.\nAlignment: Left/Center/Right.\nSliders: Adjust dot size and spacing live.\nVisibility: Toggle indicator on/off for specific slides."
+  },
+  {
+    "objectID": "example.html#theme-palettes",
+    "href": "example.html#theme-palettes",
+    "title": "Quarto Progress Indicator",
+    "section": "Theme Palettes",
+    "text": "Theme Palettes\nChoose from a variety of Professional Palettes using visual swatches:\n\nNord: Clean Arctic Blue\nIndigo: Modern Purple/Blue\nEmerald: Muted Professional Green\nSlate: Corporate Grey/Blue\nCyber: Vibrant Modern Cyan"
+  },
+  {
+    "objectID": "example.html#active-animations",
+    "href": "example.html#active-animations",
+    "title": "Quarto Progress Indicator",
+    "section": "Active Animations",
+    "text": "Active Animations\nAdd flair to your active slide with CSS animations:\n\nPulse: Soft breathing effect.\nGlow: Subtle luminous highlight.\nBounce: Playful jumping dot."
+  },
+  {
+    "objectID": "example.html#installation",
+    "href": "example.html#installation",
+    "title": "Quarto Progress Indicator",
+    "section": "Installation",
+    "text": "Installation\nquarto add ofurkancoban/QuartoProgressIndicator"
+  },
+  {
+    "objectID": "example.html#setup-in-yaml",
+    "href": "example.html#setup-in-yaml",
+    "title": "Quarto Progress Indicator",
+    "section": "Setup in YAML",
+    "text": "Setup in YAML\nformat:\n  revealjs:\n    include-after-body: _extensions/ofurkancoban/progress-indicator/progress-indicator.html\n    progress-indicator:\n      position: \"bottom\"\n      style: \"dots\""
+  },
+  {
+    "objectID": "example.html#css-customization",
+    "href": "example.html#css-customization",
+    "title": "Quarto Progress Indicator",
+    "section": "CSS Customization",
+    "text": "CSS Customization\n:root {\n  --primary-color: #3b60e4;\n  --inactive-color: #bbbbbb;\n  --dot-size: 8px;\n}"
+  },
+  {
+    "objectID": "example.html#keyboard-shortcuts",
+    "href": "example.html#keyboard-shortcuts",
+    "title": "Quarto Progress Indicator",
+    "section": "Keyboard Shortcuts",
+    "text": "Keyboard Shortcuts\n\n\n\nShortcut\nAction\n\n\n\n\nc\nOpen Display Settings\n\n\nx\nHide/Show Indicator"
+  },
+  {
+    "objectID": "example.html#hidden-slides",
+    "href": "example.html#hidden-slides",
+    "title": "Quarto Progress Indicator",
+    "section": "Hidden Slides",
+    "text": "Hidden Slides\nAdd the .hide-progress class to any slide to hide the indicator:\n## QA Slide {.hide-progress}"
+  },
+  {
+    "objectID": "example.html#summary",
+    "href": "example.html#summary",
+    "title": "Quarto Progress Indicator",
+    "section": "Summary",
+    "text": "Summary\n\nZero Lua dependencies.\nVisual theme selection.\nSmart persistence across reloads.\nEasy installation & extraction."
+  },
+  {
+    "objectID": "example.html#thank-you",
+    "href": "example.html#thank-you",
+    "title": "Quarto Progress Indicator",
+    "section": "Thank You!",
+    "text": "Thank You!\nCheck out my other projects at: github.com/ofurkancoban"
+  }
+]
