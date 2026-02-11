@@ -57,7 +57,7 @@
     opacity: 0;
     transform: translateY(0); /* Default state (will be overridden by position specific transforms) */
     transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 3000; /* Higher than everything */
+    z-index: 10; /* Lower than UI controls (menu, buttons) but higher than content */
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
