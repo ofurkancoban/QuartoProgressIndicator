@@ -336,7 +336,7 @@
     backdrop-filter: blur(10px);
     border-radius: 12px;
     box-shadow: 0 5px 25px rgba(0,0,0,0.15);
-    padding: 20px;
+    padding: 0;
     z-index: 3001;
     transform: translateY(20px);
     opacity: 0;
@@ -344,7 +344,32 @@
     transition: opacity 0.3s ease, transform 0.3s ease;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     color: #333;
-    overflow: hidden; /* Prevent info overlay from leaking out to the right */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+}
+
+.indicator-scroll-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px 20px 20px 20px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.indicator-scroll-content::-webkit-scrollbar {
+    width: 5px;
+}
+.indicator-scroll-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+.indicator-scroll-content::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.1);
+    border-radius: 3px;
+}
+.indicator-scroll-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(0,0,0,0.2);
 }
 
 .indicator-settings-panel.visible {
@@ -414,13 +439,16 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 0;
     font-weight: 600;
     font-size: 14px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     border-bottom: 1px solid rgba(0,0,0,0.1);
-    padding-bottom: 10px;
+    padding: 20px 20px 15px 20px;
+    flex-shrink: 0;
+    background: inherit;
+    z-index: 2;
 }
 
 .indicator-setting-item {
@@ -1082,99 +1110,98 @@ input[type="color"] {
                 </div>
             </div>
             
-            <div class="indicator-setting-item">
-                <span class="indicator-setting-label">Position</span>
-                <div class="indicator-btn-group" data-setting="position">
-                    <button class="indicator-btn-option" data-value="top">Top</button>
-                    <button class="indicator-btn-option" data-value="bottom">Bottom</button>
+            <div class="indicator-scroll-content">
+                <div class="indicator-setting-item">
+                    <span class="indicator-setting-label">Position</span>
+                    <div class="indicator-btn-group" data-setting="position">
+                        <button class="indicator-btn-option" data-value="top">Top</button>
+                        <button class="indicator-btn-option" data-value="bottom">Bottom</button>
+                    </div>
                 </div>
-            </div>
 
-            <div class="indicator-setting-item">
-                <span class="indicator-setting-label">Alignment</span>
-                <div class="indicator-btn-group" data-setting="alignment">
-                    <button class="indicator-btn-option" data-value="left">Left</button>
-                    <button class="indicator-btn-option" data-value="center">Center</button>
-                    <button class="indicator-btn-option" data-value="right">Right</button>
+                <div class="indicator-setting-item">
+                    <span class="indicator-setting-label">Alignment</span>
+                    <div class="indicator-btn-group" data-setting="alignment">
+                        <button class="indicator-btn-option" data-value="left">Left</button>
+                        <button class="indicator-btn-option" data-value="center">Center</button>
+                        <button class="indicator-btn-option" data-value="right">Right</button>
+                    </div>
                 </div>
-            </div>
 
-            <div class="indicator-setting-item">
-                <span class="indicator-setting-label">Edit Color For</span>
-                <div class="indicator-btn-group" data-setting="color-target">
-                    <button class="indicator-btn-option active" data-value="primary">Active Dots</button>
-                    <button class="indicator-btn-option" data-value="inactive">Inactive Dots</button>
+                <div class="indicator-setting-item">
+                    <span class="indicator-setting-label">Edit Color For</span>
+                    <div class="indicator-btn-group" data-setting="color-target">
+                        <button class="indicator-btn-option active" data-value="primary">Active Dots</button>
+                        <button class="indicator-btn-option" data-value="inactive">Inactive Dots</button>
+                    </div>
                 </div>
-            </div>
 
-            <div class="indicator-setting-item">
-                <span class="indicator-setting-label">Theme Palettes</span>
-                <div class="theme-swatch-group" data-setting="theme-preset">
-                    <!-- Themes will be injected here -->
+                <div class="indicator-setting-item">
+                    <span class="indicator-setting-label">Theme Palettes</span>
+                    <div class="theme-swatch-group" data-setting="theme-preset">
+                        <!-- Themes will be injected here -->
+                    </div>
                 </div>
-            </div>
 
-
-            <div class="indicator-setting-item">
-                <span class="indicator-setting-label" id="colorPickerLabel">Active Color</span>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <input type="color" id="indicatorColorPicker" style="flex: 1;">
-                    <span id="colorValueDisplay" style="font-size: 10px; color: #666; font-family: monospace;"></span>
+                <div class="indicator-setting-item">
+                    <span class="indicator-setting-label" id="colorPickerLabel">Active Color</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="color" id="indicatorColorPicker" style="flex: 1;">
+                        <span id="colorValueDisplay" style="font-size: 10px; color: #666; font-family: monospace;"></span>
+                    </div>
                 </div>
-            </div>
 
-            <div class="indicator-setting-item">
-                <span class="indicator-setting-label">Style</span>
-                <div class="indicator-btn-group" data-setting="style">
-                    <button class="indicator-btn-option ${styleConfig === 'dots' ? 'active' : ''}" data-value="dots">Dots</button>
-                    <button class="indicator-btn-option ${styleConfig === 'bar' ? 'active' : ''}" data-value="bar">Bar</button>
+                <div class="indicator-setting-item">
+                    <span class="indicator-setting-label">Style</span>
+                    <div class="indicator-btn-group" data-setting="style">
+                        <button class="indicator-btn-option ${styleConfig === 'dots' ? 'active' : ''}" data-value="dots">Dots</button>
+                        <button class="indicator-btn-option ${styleConfig === 'bar' ? 'active' : ''}" data-value="bar">Bar</button>
+                    </div>
                 </div>
-            </div>
 
-            <div class="indicator-setting-item">
-                <span class="indicator-setting-label">Dot Size</span>
-                <input type="range" min="4" max="20" value="8" id="indicatorSizeSlider">
-            </div>
-
-            <div class="indicator-setting-item">
-                <span class="indicator-setting-label">Spacing</span>
-                <input type="range" min="5" max="50" value="15" id="indicatorSpacingSlider">
-            </div>
-
-            <div class="indicator-setting-item">
-                <span class="indicator-setting-label">Animation</span>
-                <div class="indicator-btn-group" data-setting="animation">
-                    <button class="indicator-btn-option" data-value="none">None</button>
-                    <button class="indicator-btn-option" data-value="pulse">Pulse</button>
-                    <button class="indicator-btn-option" data-value="glow">Glow</button>
-                    <button class="indicator-btn-option" data-value="bounce">Bounce</button>
+                <div class="indicator-setting-item">
+                    <span class="indicator-setting-label">Dot Size</span>
+                    <input type="range" min="4" max="20" value="8" id="indicatorSizeSlider">
                 </div>
+
+                <div class="indicator-setting-item">
+                    <span class="indicator-setting-label">Spacing</span>
+                    <input type="range" min="5" max="50" value="15" id="indicatorSpacingSlider">
+                </div>
+
+                <div class="indicator-setting-item">
+                    <span class="indicator-setting-label">Animation</span>
+                    <div class="indicator-btn-group" data-setting="animation">
+                        <button class="indicator-btn-option" data-value="none">None</button>
+                        <button class="indicator-btn-option" data-value="pulse">Pulse</button>
+                        <button class="indicator-btn-option" data-value="glow">Glow</button>
+                        <button class="indicator-btn-option" data-value="bounce">Bounce</button>
+                    </div>
+                </div>
+
+                <div class="indicator-setting-item" style="display: flex; align-items: center; justify-content: space-between;">
+                    <span class="indicator-setting-label" style="margin: 0;">Show on Title Slide</span>
+                    <input type="checkbox" id="indicatorTitleToggle" style="width: 20px; height: 20px; cursor: pointer;">
+                </div>
+
+                <div class="indicator-setting-item" style="display: flex; align-items: center; justify-content: space-between;">
+                    <span class="indicator-setting-label" style="margin: 0;">Show Tooltips</span>
+                    <input type="checkbox" id="indicatorTooltipToggle" style="width: 20px; height: 20px; cursor: pointer;">
+                </div>
+
+                <!-- Slide Visibility Manager -->
+                <div class="indicator-settings-header" style="margin-top: 15px; padding: 10px 0; border: none;">
+                    <span>Slide Visibility</span>
+                </div>
+                <div id="indicatorSlideList" style="max-height: 200px; overflow-y: auto; background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+                    <!-- Populated via JS -->
+                    <div style="font-size: 11px; color: #999; text-align: center; padding: 10px;">Loading slides...</div>
+                </div>
+
+                <button id="indicatorResetBtn" style="width: 100%; margin-top: 15px; background: #fee; color: #d33; border: 1px solid #fcc; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600;">
+                    🔄 Reset to Defaults
+                </button>
             </div>
-
-
-            <div class="indicator-setting-item" style="display: flex; align-items: center; justify-content: space-between;">
-                <span class="indicator-setting-label" style="margin: 0;">Show on Title Slide</span>
-                <input type="checkbox" id="indicatorTitleToggle" style="width: 20px; height: 20px; cursor: pointer;">
-            </div>
-
-            <div class="indicator-setting-item" style="display: flex; align-items: center; justify-content: space-between;">
-                <span class="indicator-setting-label" style="margin: 0;">Show Tooltips</span>
-                <input type="checkbox" id="indicatorTooltipToggle" style="width: 20px; height: 20px; cursor: pointer;">
-            </div>
-
-            <!-- Slide Visibility Manager -->
-            <div class="indicator-settings-header" style="margin-top: 15px;">
-                <span>Slide Visibility</span>
-            </div>
-            <div id="indicatorSlideList" style="max-height: 200px; overflow-y: auto; background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
-                <!-- Populated via JS -->
-                <div style="font-size: 11px; color: #999; text-align: center; padding: 10px;">Loading slides...</div>
-            </div>
-
-            <button id="indicatorResetBtn" style="width: 100%; margin-top: 15px; background: #fee; color: #d33; border: 1px solid #fcc; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600;">
-                🔄 Reset to Defaults
-            </button>
-
         `;
         document.body.appendChild(panel);
 
@@ -1519,7 +1546,7 @@ progress-indicator:
             });
         });
         
-        panel.appendChild(exportBtn);
+        panel.querySelector('.indicator-scroll-content').appendChild(exportBtn);
 
         // 8.5 JSON Import/Export
         const jsonGroup = document.createElement('div');
@@ -1590,8 +1617,8 @@ progress-indicator:
 
         jsonGroup.appendChild(exportJsonBtn);
         jsonGroup.appendChild(importJsonBtn);
-        panel.appendChild(jsonGroup);
-        panel.appendChild(fileInput);
+        panel.querySelector('.indicator-scroll-content').appendChild(jsonGroup);
+        panel.querySelector('.indicator-scroll-content').appendChild(fileInput);
 
         // 8.6 Info Overlay Logic
         const infoBtn = panel.querySelector('#indicatorInfoBtn');
