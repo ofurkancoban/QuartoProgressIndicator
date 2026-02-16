@@ -13,6 +13,7 @@ format:
     highlight-style: github
     code-fold: false
     preview-links: auto
+    embed-resources: true
 ---
 
 # Introduction {data-section="Introduction"}
