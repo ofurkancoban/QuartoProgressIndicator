@@ -43,7 +43,7 @@
     width: auto;
     height: 60px; /* Increased from 45px to prevent clipping */
     box-sizing: border-box;
-    background: rgba(255, 255, 255, 0.9);
+    background: var(--indicator-bg, rgba(255, 255, 255, 0.9));
     backdrop-filter: blur(5px);
     display: flex;
     justify-content: center !important; /* Force center */
@@ -69,20 +69,24 @@
 /* Position-specific entrance animations and padding */
 .progress-indicator[data-position="bottom"] {
     bottom: 0;
+    top: auto;
     border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: none;
     transform: translateY(100%); /* Start off-screen */
-    padding: 0 20px; /* Symmetric padding for centering */
+    padding: 0 20px;
 }
 
 .progress-indicator[data-position="top"] {
     top: 0;
+    bottom: auto;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    border-top: none;
     transform: translateY(-100%); /* Start off-screen */
-    padding: 0 20px; /* Symmetric padding for centering */
+    padding: 0 20px;
 }
 
 .reveal {
-    transition: top 0.3s ease, bottom 0.3s ease, height 0.3s ease;
+    transition: top 0.3s ease, bottom 0.3s ease, height 0.3s ease, margin-top 0.4s ease, margin-bottom 0.4s ease;
 }
 
 .indicator-section {
@@ -95,7 +99,7 @@
 
 .section-label {
     font-size: 10px;
-    color: #666;
+    color: var(--label-color, #888);
     margin-bottom: 8px; /* Balanced spacing */
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -331,7 +335,7 @@
     position: fixed;
     bottom: 70px;
     left: 20px;
-    width: 280px;
+    width: 340px;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     border-radius: 12px;
@@ -379,13 +383,14 @@
 }
 .theme-swatch-group {
     display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 6px;
     padding-top: 5px;
 }
 .theme-swatch {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     border: 2px solid #eee;
     cursor: pointer;
@@ -406,14 +411,21 @@
     position: absolute;
     top: 0;
     left: 0;
-    width: 50%;
+    width: 33.33%;
     height: 100%;
 }
 .theme-swatch .swatch-inactive {
     position: absolute;
     top: 0;
+    left: 33.33%;
+    width: 33.33%;
+    height: 100%;
+}
+.theme-swatch .swatch-bg {
+    position: absolute;
+    top: 0;
     right: 0;
-    width: 50%;
+    width: 33.34%;
     height: 100%;
 }
 .theme-swatch-label {
@@ -823,15 +835,16 @@ input[type="color"] {
                         tooltip.innerText = dotData.title;
                         tooltip.classList.add('visible');
                         const rect = dot.getBoundingClientRect();
+                        const tooltipHeight = tooltip.offsetHeight || 30;
                         
-                        // Calculate position relative to viewport (since available in body)
+                        // Calculate position relative to viewport (since tooltip is position:fixed on body)
                         tooltip.style.left = (rect.left + rect.width/2) + 'px';
                         
                         if (position === 'top') {
-                            tooltip.style.top = (rect.bottom + 10) + 'px';
+                            tooltip.style.top = (rect.bottom + 8) + 'px';
                             tooltip.classList.add('bottom');
                         } else {
-                            tooltip.style.top = (rect.top - 10) + 'px'; 
+                            tooltip.style.top = (rect.top - tooltipHeight - 8) + 'px'; 
                             tooltip.classList.remove('bottom');
                         }
                     });
@@ -894,56 +907,74 @@ input[type="color"] {
             if ((hideOnTitle && currentIndex === 0) || isExplicitlyHidden || isManuallyHidden) {
                 indicatorContainer.classList.remove('visible');
                 indicatorContainer.style.pointerEvents = 'none';
-                
-                // Reset screen shift
-                revealEl.style.removeProperty('height');
-                revealEl.style.removeProperty('padding-top'); // Reset padding for top bar
-                revealEl.style.removeProperty('top');
-                revealEl.style.removeProperty('bottom');
-                
-                // Reset menu button shift
-                const menuBtn = document.querySelector('.slide-menu-button');
-                if (menuBtn) {
-                    menuBtn.style.removeProperty('bottom');
-                }
 
-                // Reset slide number shift
-                const slideNum = document.querySelector('.slide-number');
-                if (slideNum) {
-                    slideNum.style.removeProperty('position');
-                    slideNum.style.removeProperty('bottom');
-                    slideNum.style.removeProperty('z-index');
-                }
+                const viewportEl = document.querySelector('.reveal-viewport') || document.body;
+
+                // Reset screen shift
+                revealEl.style.removeProperty('padding-top'); 
+                viewportEl.style.removeProperty('height');
+                viewportEl.style.removeProperty('margin-top');
+                viewportEl.style.removeProperty('margin-bottom');
+                viewportEl.style.removeProperty('box-sizing');
+                viewportEl.style.removeProperty('position');
+                
+                // Reset ALL elements that we previously forced to absolute
+                // Uses a data attribute to track which elements were modified
+                document.querySelectorAll('[data-pi-original-position]').forEach(el => {
+                    const orig = el.getAttribute('data-pi-original-position');
+                    el.style.setProperty('position', orig);
+                    el.removeAttribute('data-pi-original-position');
+                    el.style.removeProperty('top');
+                    el.style.removeProperty('bottom');
+                    el.style.removeProperty('z-index');
+                    el.style.removeProperty('transition');
+                });
             } else {
                 indicatorContainer.classList.add('visible');
                 indicatorContainer.style.pointerEvents = 'auto';
                 
-                // Apply screen shift logic (Optional but good for top bar)
-                if (indicatorContainer.getAttribute('data-position') === 'top') {
-                     // Add padding to body or Reveal to prevent overlap
-                     revealEl.style.paddingTop = '60px';
+                const viewportEl = document.querySelector('.reveal-viewport') || document.body;
+                const isTop = indicatorContainer.getAttribute('data-position') === 'top';
+                const barHeight = indicatorContainer.offsetHeight || 50;
+                const offset = barHeight + 10; // bar height + gap
+
+                // Canvas Resize Logic to prevent overlap (theme-agnostic)
+                viewportEl.style.setProperty('height', `calc(100vh - ${offset}px)`, 'important');
+                viewportEl.style.setProperty('box-sizing', 'border-box', 'important');
+                viewportEl.style.setProperty('position', 'relative', 'important');
+                
+                if (isTop) {
+                     viewportEl.style.setProperty('margin-top', `${offset}px`, 'important');
+                     viewportEl.style.setProperty('margin-bottom', '0px', 'important');
                 } else {
-                     revealEl.style.removeProperty('padding-top');
+                     viewportEl.style.setProperty('margin-top', '0px', 'important');
+                     viewportEl.style.setProperty('margin-bottom', `${offset}px`, 'important');
                 }
                 
-                // Shift menu button if it exists
-
-                    const menuBtn = document.querySelector('.slide-menu-button');
-                    if (menuBtn) {
-                        menuBtn.style.setProperty('bottom', '68px', 'important'); // Lowered from 76px
-                        menuBtn.style.transition = 'bottom 0.3s ease';
+                // Theme-agnostic: find ALL position:fixed elements and convert them
+                // This works across any Reveal.js theme (clean-revealjs, simple, moon, etc.)
+                document.querySelectorAll('body *').forEach(el => {
+                    // Skip the indicator itself and its children
+                    if (indicatorContainer.contains(el)) return;
+                    // Skip elements inside .reveal .slides (actual slide content)
+                    if (el.closest('.slides')) return;
+                    // Skip tooltip and settings panel — they need position:fixed to render properly
+                    if (el.classList.contains('indicator-tooltip')) return;
+                    if (el.classList.contains('indicator-settings-panel')) return;
+                    
+                    const computed = window.getComputedStyle(el);
+                    if (computed.position === 'fixed') {
+                        // Save original position so we can restore it later
+                        if (!el.hasAttribute('data-pi-original-position')) {
+                            el.setAttribute('data-pi-original-position', 'fixed');
+                        }
+                        el.style.setProperty('position', 'absolute', 'important');
                     }
-
-                    // Shift slide number if it exists
-                    const slideNum = document.querySelector('.slide-number');
-                    if (slideNum) {
-                        // Use fixed position and high z-index to show on top of indicator
-                        slideNum.style.setProperty('position', 'fixed', 'important');
-                        slideNum.style.setProperty('bottom', '68px', 'important'); // Lowered from 76px
-                        slideNum.style.setProperty('z-index', '1100', 'important');
-                        slideNum.style.transition = 'bottom 0.3s ease';
-                    }
-                }
+                });
+                
+                // Remove legacy padding if it existed
+                revealEl.style.removeProperty('padding-top');
+            }
             
             // Trigger layout update
             if (reveal.layout) reveal.layout();
@@ -1034,8 +1065,8 @@ input[type="color"] {
                 link.href = '#';
                 link.onclick = (e) => { e.preventDefault(); togglePanel(); };
                 
-                // Structure: <kbd>c</kbd> Label
-                link.innerHTML = '<kbd>c</kbd> Progress Indicator Settings';
+                // Structure: <kbd>i</kbd> Label
+                link.innerHTML = '<kbd>i</kbd> Progress Indicator Settings';
                 
                 li.appendChild(link);
                 
@@ -1152,6 +1183,14 @@ input[type="color"] {
                 </div>
 
                 <div class="indicator-setting-item">
+                    <span class="indicator-setting-label">Background Color</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="color" id="indicatorBgColorPicker" value="#ffffff" style="flex: 1;">
+                        <span id="bgColorValueDisplay" style="font-size: 10px; color: #666; font-family: monospace;">#ffffff</span>
+                    </div>
+                </div>
+
+                <div class="indicator-setting-item">
                     <span class="indicator-setting-label">Style</span>
                     <div class="indicator-btn-group" data-setting="style">
                         <button class="indicator-btn-option ${styleConfig === 'dots' ? 'active' : ''}" data-value="dots">Dots</button>
@@ -1227,11 +1266,38 @@ input[type="color"] {
                 panel.querySelectorAll('.indicator-btn-group[data-setting="position"] .indicator-btn-option').forEach(b => b.classList.remove('active'));
                 e.target.classList.add('active');
                 
-                const val = e.target.getAttribute('data-value');
-                container.setAttribute('data-position', val);
+                const newPos = e.target.getAttribute('data-value');
+                const oldPos = container.getAttribute('data-position') || 'bottom';
                 
-                // Update CSS var for persistence
-                root.style.setProperty('--progress-position', val);
+                // Skip animation if same position
+                if (newPos === oldPos) return;
+                
+                // Exit animation: slide out in current direction
+                const exitTransform = oldPos === 'bottom' ? 'translateY(100%)' : 'translateY(-100%)';
+                container.style.transform = exitTransform;
+                container.style.opacity = '0';
+                
+                // After exit completes, swap position and enter from new direction
+                setTimeout(() => {
+                    container.setAttribute('data-position', newPos);
+                    root.style.setProperty('--progress-position', newPos);
+                    
+                    // Force the new position's off-screen state before entering
+                    const enterStart = newPos === 'top' ? 'translateY(-100%)' : 'translateY(100%)';
+                    container.style.transition = 'none'; // Disable transition for instant repositioning
+                    container.style.transform = enterStart;
+                    
+                    // Force reflow to apply the instant repositioning
+                    container.offsetHeight;
+                    
+                    // Re-enable transition and animate entrance
+                    container.style.transition = '';
+                    container.style.transform = 'translateY(0)';
+                    container.style.opacity = '1';
+                    
+                    // Re-apply viewport resize logic
+                    updateDots();
+                }, 300); // Match the CSS transition duration
             });
         });
 
@@ -1303,14 +1369,35 @@ input[type="color"] {
             });
         }
 
-        // 3. Theme Palettes - Redesigned with professional swatches
+        // 3b. Background Color Picker
+        const bgColorPicker = panel.querySelector('#indicatorBgColorPicker');
+        const bgColorValueDisplay = panel.querySelector('#bgColorValueDisplay');
+        
+        // Init bg color from current computed style
+        const currentBg = getComputedStyle(root).getPropertyValue('--indicator-bg').trim() || 'rgba(255, 255, 255, 0.9)';
+        // Try to set picker value (only works with hex)
+        if (currentBg.startsWith('#')) {
+            bgColorPicker.value = currentBg;
+            bgColorValueDisplay.innerText = currentBg;
+        }
+
+        bgColorPicker.addEventListener('input', (e) => {
+            const hex = e.target.value;
+            root.style.setProperty('--indicator-bg', hex);
+            bgColorValueDisplay.innerText = hex;
+            saveSettings();
+        });
+
+        // 3. Theme Palettes - Popular color schemes (light & dark mix)
         const themes = {
-            nord: { name: 'Nord', primary: '#88C0D0', inactive: '#4C566A', size: '10px' },
-            indigo: { name: 'Indigo', primary: '#818CF8', inactive: '#E0E7FF', size: '8px' },
-            emerald: { name: 'Emerald', primary: '#27ae60', inactive: '#d5e8d4', size: '10px' },
-            slate: { name: 'Slate', primary: '#334155', inactive: '#cbd5e1', size: '12px' },
-            rose: { name: 'Rose', primary: '#DB2777', inactive: '#FCE7F3', size: '8px' },
-            cyber: { name: 'Cyber', primary: '#06B6D4', inactive: '#CFFAFE', size: '10px' }
+            ocean:      { name: 'Ocean',       primary: '#0077B6', inactive: '#CAF0F8', bg: '#FFFFFF', label: '#5A7D8A', size: '10px' },
+            emerald:    { name: 'Emerald',     primary: '#059669', inactive: '#D1FAE5', bg: '#F0FDF4', label: '#4B7A5E', size: '10px' },
+            sunset:     { name: 'Sunset',      primary: '#EA580C', inactive: '#FED7AA', bg: '#FFFBEB', label: '#9A6B4A', size: '10px' },
+            lavender:   { name: 'Lavender',    primary: '#7C3AED', inactive: '#DDD6FE', bg: '#F5F3FF', label: '#7A6B99', size: '10px' },
+            dracula:    { name: 'Dracula',     primary: '#BD93F9', inactive: '#6272A4', bg: '#282A36', label: '#A8A8C0', size: '10px' },
+            nord:       { name: 'Nord',        primary: '#88C0D0', inactive: '#4C566A', bg: '#2E3440', label: '#9EAAB8', size: '10px' },
+            gruvbox:    { name: 'Gruvbox',     primary: '#FABD2F', inactive: '#928374', bg: '#282828', label: '#BDAE93', size: '10px' },
+            tokyonight: { name: 'Tokyo Night', primary: '#7AA2F7', inactive: '#565F89', bg: '#1A1B26', label: '#9AA5CE', size: '10px' }
         };
 
         const themeContainer = panel.querySelector('.theme-swatch-group');
@@ -1323,6 +1410,7 @@ input[type="color"] {
             swatch.innerHTML = `
                 <div class="swatch-active" style="background: ${t.primary}"></div>
                 <div class="swatch-inactive" style="background: ${t.inactive}"></div>
+                <div class="swatch-bg" style="background: ${t.bg}"></div>
                 <span class="theme-swatch-label">${t.name}</span>
             `;
             
@@ -1330,20 +1418,24 @@ input[type="color"] {
                 root.style.setProperty('--primary-color', t.primary);
                 root.style.setProperty('--completed-color', t.primary);
                 root.style.setProperty('--inactive-color', t.inactive);
+                root.style.setProperty('--indicator-bg', t.bg);
+                root.style.setProperty('--label-color', t.label);
                 root.style.setProperty('--dot-size', t.size);
                 
                 // Update dots immediately
                 updateDots();
                 
-                // Sync UI (sliders and pickers)
-                panel.querySelector('#indicatorSizeSlider').value = parseInt(t.size);
-                if (colorMode === 'primary') { // Use colorMode here
+                // Sync color pickers
+                if (colorMode === 'primary') {
                     colorPicker.value = t.primary;
                     colorValueDisplay.textContent = t.primary.toUpperCase();
                 } else {
                     colorPicker.value = t.inactive;
                     colorValueDisplay.textContent = t.inactive.toUpperCase();
                 }
+                bgColorPicker.value = t.bg;
+                bgColorValueDisplay.innerText = t.bg;
+                panel.querySelector('#indicatorSizeSlider').value = parseInt(t.size);
 
                 // Update active state in UI
                 themeContainer.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('active'));
@@ -1567,6 +1659,7 @@ progress-indicator:
                 alignment: container.getAttribute('data-alignment'),
                 primaryColor: getComputedStyle(root).getPropertyValue('--primary-color').trim(),
                 inactiveColor: getComputedStyle(root).getPropertyValue('--inactive-color').trim(),
+                bgColor: getComputedStyle(root).getPropertyValue('--indicator-bg').trim(),
                 size: getComputedStyle(root).getPropertyValue('--dot-size').trim(),
                 spacing: getComputedStyle(root).getPropertyValue('--section-spacing').trim(),
                 style: container.getAttribute('data-style') || 'dots',
@@ -1635,6 +1728,7 @@ progress-indicator:
                     alignment: container.getAttribute('data-alignment'),
                     primaryColor: getComputedStyle(root).getPropertyValue('--primary-color').trim(),
                     inactiveColor: getComputedStyle(root).getPropertyValue('--inactive-color').trim(),
+                    bgColor: getComputedStyle(root).getPropertyValue('--indicator-bg').trim(),
                     size: getComputedStyle(root).getPropertyValue('--dot-size').trim(),
                     spacing: getComputedStyle(root).getPropertyValue('--section-spacing').trim(),
                     style: container.getAttribute('data-style') || 'dots',
@@ -1678,6 +1772,13 @@ progress-indicator:
                     // Update picker
                     panel.querySelector('#indicatorColorPicker').value = s.primaryColor;
                     panel.querySelector('#colorValueDisplay').innerText = s.primaryColor;
+                }
+                if (s.bgColor) {
+                    root.style.setProperty('--indicator-bg', s.bgColor);
+                    const bgPicker = panel.querySelector('#indicatorBgColorPicker');
+                    const bgDisplay = panel.querySelector('#bgColorValueDisplay');
+                    if (bgPicker) bgPicker.value = s.bgColor;
+                    if (bgDisplay) bgDisplay.innerText = s.bgColor;
                 }
                 
                 // Tooltip Toggle
@@ -1772,7 +1873,7 @@ progress-indicator:
                 // Ignore if typing in an input text field
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
                 
-                if (e.key.toLowerCase() === 'c') {
+                if (e.key.toLowerCase() === 'i') {
                     const isVisible = panel.classList.toggle('visible');
                     const myItem = document.querySelector('.slide-tool-item.progress-settings-item');
                     if (myItem) {
