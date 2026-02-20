@@ -7,15 +7,18 @@ This extension is built with **pure JavaScript and CSS**, requiring **no Lua dep
 
 ## Key Features
 
-- **Interactive Settings Menu**: Configure your indicator live during the presentation.
-- **Visual Theme Palettes**: Choose from 6+ professional themes (Nord, Indigo, Emerald, Slate, Rose, Cyber).
-- **Dynamic Animations**: Pulse, Glow, or Bounce effects for the active slide dot.
-- **Smart Persistence**: All settings (color, size, theme, tooltips, etc.) are saved in your browser and persist across reloads.
-- **Tooltip Toggle**: Show or hide slide titles on hover with a simple checkbox.
-- **Developer Info Overlay**: Access metadata and social links directly from the settings panel.
-- **Keyboard Shortcuts**: Instant access to configuration and visibility controls.
-- **Zero Lua Dependency**: Works purely in the browser environment.
-- **Responsive Design**: Automatically adapts to different screen sizes and light/dark modes.
+- **🎨 Theme Palettes**: 8 curated themes — 4 light (Ocean, Emerald, Sunset, Lavender) and 4 dark (Dracula, Nord, Gruvbox, Tokyo Night).
+- **🖌️ Full Color Control**: Customize active dot, inactive dot, label text, and background colors independently.
+- **✨ Dynamic Animations**: Pulse, Glow, or Bounce effects for the active slide dot.
+- **🔄 Animated Position Toggle**: Smooth exit/enter animation when switching between Top and Bottom positions.
+- **🌐 Universal Theme Support**: Works across all Reveal.js themes (simple, moon, league, clean-revealjs, etc.) without hardcoded CSS selectors.
+- **📌 Smart Overlap Prevention**: Automatically detects and adjusts all `position: fixed` UI elements to prevent collisions with the indicator bar.
+- **💾 Smart Persistence**: All settings are saved in `localStorage` and persist across reloads.
+- **💡 Tooltip Toggle**: Show or hide slide titles on hover.
+- **📤 Export & Import**: Save/load settings as JSON files, or copy as YAML/CSS for permanent project configuration.
+- **⌨️ Keyboard Shortcuts**: Instant access to configuration and visibility controls.
+- **📱 Responsive Design**: Automatically adapts to different screen sizes and light/dark modes.
+- **🚀 Zero Lua Dependency**: Works purely in the browser environment.
 
 ## Installation
 
@@ -39,19 +42,21 @@ format:
 
 | Shortcut | Action |
 | :--- | :--- |
-| <kbd>c</kbd> | Open/Close Settings Menu |
+| <kbd>i</kbd> | Open/Close Settings Menu |
 | <kbd>x</kbd> | Toggle Indicator Visibility |
 
 ## Interactive Configuration
 
-Press <kbd>c</kbd> during your presentation to open the **Display Settings** panel. From here you can:
+Press <kbd>i</kbd> during your presentation to open the **Display Settings** panel. From here you can:
 
-- **Themes**: Switch between professional color palettes instantly.
-- **Position & Alignment**: Move the indicator to the Top/Bottom or Left/Center/Right.
+- **Position & Alignment**: Move the indicator to Top/Bottom with smooth slide animation, or align Left/Center/Right.
+- **Themes**: Switch between 8 professional color palettes — each theme sets active, inactive, background, and label colors simultaneously.
+- **Active & Inactive Colors**: Fine-tune dot and label colors with live color pickers.
+- **Background Color**: Customize the indicator bar's background color.
 - **Styling**: Toggle between **Dots** and **Progress Bar** styles.
-- **Color Picker**: Fine-tune active and inactive colors with a live picker.
 - **Visibility Manager**: Hide the indicator on specific slides or the title slide.
-- **Export Config**: Copy your current settings as YAML/CSS to permanently save them in your project.
+- **Tooltip Toggle**: Show or hide slide title tooltips on hover.
+- **Export Config**: Copy as YAML/CSS or download/upload settings as JSON.
 
 ## YAML Configuration
 
@@ -73,10 +78,20 @@ And customize aesthetics in your CSS:
 :root {
   --primary-color: #3b60e4;
   --inactive-color: #bbbbbb;
+  --indicator-bg: rgba(255, 255, 255, 0.9);
+  --label-color: #888;
   --dot-size: 8px;
   --section-spacing: 15px;
 }
 ```
+
+## Universal Theme Compatibility
+
+The indicator automatically adapts to any Reveal.js theme by dynamically scanning the DOM for `position: fixed` elements and adjusting them to prevent overlap. This means it works out-of-the-box with:
+
+- Default Reveal.js themes (`simple`, `moon`, `night`, `league`, `serif`, etc.)
+- Third-party themes (`clean-revealjs`, etc.)
+- Any custom theme with logos, footers, or plugin buttons (chalkboard, menu, etc.)
 
 ## License
 
