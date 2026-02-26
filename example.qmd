@@ -99,7 +99,7 @@ format:
 
 | Shortcut | Action |
 | :--- | :--- |
-| <kbd>c</kbd> | Open Display Settings |
+| <kbd>i</kbd> | Open Display Settings |
 | <kbd>x</kbd> | Hide/Show Indicator |
 
 ## Hidden Slides
