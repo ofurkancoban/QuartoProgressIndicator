@@ -745,6 +745,13 @@ input[type="color"] {
             );
             
             if (hideOnTitle && isCoverSlide) return; // Skip adding the cover slide to dots
+            
+            // Update range for section highlighting - include section covers and skipped slides
+            if (currentSection.startIndex === undefined || index < currentSection.startIndex) currentSection.startIndex = index;
+            if (currentSection.endIndex === undefined || index > currentSection.endIndex) currentSection.endIndex = index;
+
+            // Skip dot generation for section divider slides or explicitly skipped slides
+            if (slide.classList.contains('section-slide') || slide.classList.contains('skip-progress')) return;
 
             // Get accurate indices (h, v) for navigation
             const indices = reveal.getIndices(slide);
@@ -756,9 +763,6 @@ input[type="color"] {
                 title: slideTitle || `Slide ${index + 1}`
             });
 
-            // Update range
-            if (currentSection.startIndex === undefined || index < currentSection.startIndex) currentSection.startIndex = index;
-            if (currentSection.endIndex === undefined || index > currentSection.endIndex) currentSection.endIndex = index;
         });
 
         console.log("DEBUG: Config", config);
@@ -1728,6 +1732,7 @@ progress-indicator:
                     alignment: container.getAttribute('data-alignment'),
                     primaryColor: getComputedStyle(root).getPropertyValue('--primary-color').trim(),
                     inactiveColor: getComputedStyle(root).getPropertyValue('--inactive-color').trim(),
+                    labelColor: getComputedStyle(root).getPropertyValue('--label-color').trim(),
                     bgColor: getComputedStyle(root).getPropertyValue('--indicator-bg').trim(),
                     size: getComputedStyle(root).getPropertyValue('--dot-size').trim(),
                     spacing: getComputedStyle(root).getPropertyValue('--section-spacing').trim(),
@@ -1769,9 +1774,16 @@ progress-indicator:
                 }
                 if (s.primaryColor) {
                     root.style.setProperty('--primary-color', s.primaryColor);
+                    root.style.setProperty('--completed-color', s.primaryColor);
                     // Update picker
                     panel.querySelector('#indicatorColorPicker').value = s.primaryColor;
                     panel.querySelector('#colorValueDisplay').innerText = s.primaryColor;
+                }
+                if (s.inactiveColor) {
+                    root.style.setProperty('--inactive-color', s.inactiveColor);
+                }
+                if (s.labelColor) {
+                    root.style.setProperty('--label-color', s.labelColor);
                 }
                 if (s.bgColor) {
                     root.style.setProperty('--indicator-bg', s.bgColor);
