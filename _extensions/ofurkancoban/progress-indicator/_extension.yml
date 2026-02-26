@@ -2,7 +2,7 @@ title: Progress Indicator
 author: ofurkancoban
 url: https://github.com/ofurkancoban/QuartoProgressIndicator
 website: https://github.com/ofurkancoban/QuartoProgressIndicator
-version: 1.0.4
+version: 1.0.5
 quarto-version: ">=1.0.0"
 contributes:
   formats:

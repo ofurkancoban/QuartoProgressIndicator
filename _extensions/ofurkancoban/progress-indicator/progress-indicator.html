@@ -745,7 +745,7 @@ input[type="color"] {
             );
             
             if (hideOnTitle && isCoverSlide) return; // Skip adding the cover slide to dots
-            
+
             // Update range for section highlighting - include section covers and skipped slides
             if (currentSection.startIndex === undefined || index < currentSection.startIndex) currentSection.startIndex = index;
             if (currentSection.endIndex === undefined || index > currentSection.endIndex) currentSection.endIndex = index;
@@ -762,7 +762,6 @@ input[type="color"] {
                 v: indices.v, // Vertical index
                 title: slideTitle || `Slide ${index + 1}`
             });
-
         });
 
         console.log("DEBUG: Config", config);

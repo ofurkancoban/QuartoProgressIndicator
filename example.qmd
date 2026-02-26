@@ -39,7 +39,7 @@ It runs purely on **JavaScript & CSS** with zero Lua dependencies!
 
 ## Display Settings Panel
 
-Press <kbd>c</kbd> anywhere in the presentation to open the **Configuration Menu**.
+Press <kbd>i</kbd> anywhere in the presentation to open the **Configuration Menu**.
 
 - **Position**: Toggle Top/Bottom.
 - **Alignment**: Left/Center/Right.
