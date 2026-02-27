@@ -1,19 +1,9 @@
 project:
-  type: website # Or default, but website is common for groups of slides
+  type: website
+
+filters:
+  - ofurkancoban/progress-indicator
 
 format:
   revealjs:
-    include-after-body: _extensions/ofurkancoban/progress-indicator/progress-indicator.html
-    progress: false # Hide Reveal.js native progress bar
-    # You can also set project-wide defaults for the indicator here
-    include-in-header:
-      - text: |
-          <style>
-            :root {
-              --progress-position: bottom;
-              --primary-color: #3366ff;
-              --completed-color: #3366ff;
-              --dot-size: 8px;
-              --section-spacing: 15px;
-            }
-          </style>
+    progress: false   # Hide Reveal.js native progress bar

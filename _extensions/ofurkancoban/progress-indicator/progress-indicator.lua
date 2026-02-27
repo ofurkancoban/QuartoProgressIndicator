@@ -1,9 +1,13 @@
-<style>
+-- progress-indicator.lua
+-- Quarto Lua filter for Progress Indicator extension.
+-- CSS and JS are embedded directly so no external files are needed.
+
+local css = [====[
 /* progress-indicator styles */
 :root {
     --progress-position: bottom; /* top or bottom */
-    --primary-color: #3b60e4;
-    --completed-color: #3b60e4;
+    --primary-color: #0d4770;
+    --completed-color: #0d4770;
     --dot-size: 8px;
     --section-spacing: 15px;
     --progress-alignment: center; /* left, center, right */
@@ -644,9 +648,10 @@ input[type="color"] {
 .indicator-info-close:hover {
     color: #333;
 }
-</style>
 
-<script>
+]====]
+
+local js = [====[
 (function() {
     function initProgressIndicator() {
         console.log("Initializing Quarto Progress Indicator...");
@@ -657,7 +662,9 @@ input[type="color"] {
             }
 
         const reveal = Reveal;
-        const slides = reveal.getSlides(); // Array of all slide elements
+        // Use querySelectorAll instead of getSlides() because getSlides() omits 'uncounted' slides, 
+        // which prevents the indicator from reading the H1 section dividers.
+        const slides = Array.from(document.querySelectorAll('.reveal .slides section:not(.stack)'));
         
         // Configuration from Reveal.js config (set in YAML under format: revealjs: progress-indicator: ...)
         const config = (reveal.getConfig && (reveal.getConfig()['progress-indicator'] || reveal.getConfig().progressIndicator)) || {};
@@ -695,11 +702,16 @@ input[type="color"] {
         const styleConfig = config.style || 'dots'; // 'dots' or 'bar'
         
         const isClickable = config.clickable !== false; // Default true (if undefined, it's true)
-        const showTooltips = config.tooltips !== false; // Default true
+        let showTooltips = config.tooltips !== false; // Default true
+        let dotPageCount = false; // If true, slide number shows count among dots only
+        let settingsKey = 'i';    // Key to open/close settings panel
+        let toggleKey   = 'x';    // Key to toggle indicator visibility
+        let autoHide    = false;  // Fade out indicator when mouse/keyboard idle
         
         document.body.appendChild(indicatorContainer);
 
-        let hiddenSlides = new Set(); // Stores slide indices manually hidden via settings
+        let hiddenIndicatorSlides = new Set(); // Stores slide indices where indicator bar is hidden
+        let omittedSlides = new Set(); // Stores slide indices manually omitted from dots
 
         // Tooltip Element - Append to BODY to avoid clipping
         let tooltip = null;
@@ -716,134 +728,122 @@ input[type="color"] {
             createTooltip();
         }
 
-        let sections = [];
-        let currentSection = null;
-
-        // Group slides by section
-        // Group slides by section
-        slides.forEach((slide, index) => {
-            const h1 = slide.querySelector('h1');
-            const h2 = slide.querySelector('h2');
-            const slideTitle = h1 ? h1.innerText : (h2 ? h2.innerText : "");
+        function buildDots() {
+            indicatorContainer.querySelectorAll('.indicator-section').forEach(el => el.remove());
+            const slides = Array.from(document.querySelectorAll('.reveal .slides section:not(.stack)'));
             
-            // Check for new section *before* deciding to skip the slide documentation
-            if (h1 || currentSection === null) {
-                const sectionTitle = h1 ? h1.innerText : (currentSection ? currentSection.title : "Introduction");
-                currentSection = {
-                    title: sectionTitle,
-                    dots: []
-                };
-                sections.push(currentSection);
-            }
+            let sections = [];
+            let currentSection = null;
 
-            // Robust Title Slide detection - ONLY for the very first slide (Cover)
-            // We do NOT want to skip section divider slides that might happen to have 'title-slide' class
-            const isCoverSlide = (index === 0) && (
-                slide.classList.contains('title-slide') || 
-                slide.id === 'title-slide' ||
-                (slide.querySelector('.quarto-title-block') || slide.querySelector('h1.title'))
-            );
-            
-            if (hideOnTitle && isCoverSlide) return; // Skip adding the cover slide to dots
+            slides.forEach((slide, index) => {
+                const h1 = slide.querySelector('h1');
+                const h2 = slide.querySelector('h2');
+                const slideTitle = h1 ? h1.innerText : (h2 ? h2.innerText : "");
+                
+                if (h1 || currentSection === null) {
+                    const sectionTitle = h1 ? h1.innerText : (currentSection ? currentSection.title : "Introduction");
+                    currentSection = {
+                        title: sectionTitle,
+                        dots: []
+                    };
+                    sections.push(currentSection);
+                }
 
-            // Update range for section highlighting - include section covers and skipped slides
-            if (currentSection.startIndex === undefined || index < currentSection.startIndex) currentSection.startIndex = index;
-            if (currentSection.endIndex === undefined || index > currentSection.endIndex) currentSection.endIndex = index;
+                const isCoverSlide = (index === 0) && (
+                    slide.classList.contains('title-slide') || 
+                    slide.id === 'title-slide' ||
+                    (slide.querySelector('.quarto-title-block') || slide.querySelector('h1.title'))
+                );
+                
+                if (hideOnTitle && isCoverSlide) return;
 
-            // Skip dot generation for section divider slides or explicitly skipped slides
-            if (slide.classList.contains('section-slide') || slide.classList.contains('skip-progress')) return;
+                if (currentSection.startIndex === undefined || index < currentSection.startIndex) currentSection.startIndex = index;
+                if (currentSection.endIndex === undefined || index > currentSection.endIndex) currentSection.endIndex = index;
 
-            // Get accurate indices (h, v) for navigation
-            const indices = reveal.getIndices(slide);
-            
-            currentSection.dots.push({
-                index: index, // Flat index (for progress calculation)
-                h: indices.h, // Horizontal index
-                v: indices.v, // Vertical index
-                title: slideTitle || `Slide ${index + 1}`
+                if (slide.classList.contains('section-slide') || slide.classList.contains('skip-progress')) return;
+                
+                if (omittedSlides.has(index)) return;
+
+                const indices = reveal.getIndices(slide);
+                
+                currentSection.dots.push({
+                    index: index,
+                    h: indices.h,
+                    v: indices.v,
+                    title: slideTitle || `Slide ${index + 1}`
+                });
             });
-        });
 
-        console.log("DEBUG: Config", config);
-        console.log("DEBUG: Parsed Sections", sections);
+            let renderedSectionCount = 0;
+            sections.forEach(section => {
+                if (section.dots.length === 0) return;
 
-        // Build UI
-        let renderedSectionCount = 0;
-        sections.forEach(section => {
-            // Skip parsed sections that ended up empty (e.g. Title Slide placeholder)
-            if (section.dots.length === 0) return;
+                const sectionDiv = document.createElement('div');
+                sectionDiv.className = 'indicator-section';
+                sectionDiv.setAttribute('data-section-index', renderedSectionCount++);
+                sectionDiv.setAttribute('data-start-index', section.startIndex);
+                sectionDiv.setAttribute('data-end-index', section.endIndex);
 
-            const sectionDiv = document.createElement('div');
-            sectionDiv.className = 'indicator-section';
-            sectionDiv.setAttribute('data-section-index', renderedSectionCount++);
-            sectionDiv.setAttribute('data-start-index', section.startIndex);
-            sectionDiv.setAttribute('data-end-index', section.endIndex);
-
-            const label = document.createElement('div');
-            label.className = 'section-label';
-            label.innerText = section.title;
-            
-            if (isClickable) {
-                label.style.cursor = 'pointer';
-                label.style.pointerEvents = 'auto'; 
-                // Use capture phase to prevent Reveal from stealing the click
-                label.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-                    console.log('Navigating to section start:', section.dots[0]);
-                    // Navigate using accurate coordinates
-                    const target = section.dots[0];
-                    if (target.h !== undefined && target.v !== undefined) {
-                        reveal.slide(target.h, target.v);
-                    } else {
-                        reveal.slide(target.index);
-                    }
-                }, true);
-            }
-            
-            sectionDiv.appendChild(label);
-
-            const dotsContainer = document.createElement('div');
-            dotsContainer.className = 'dots-container';
-            if (styleConfig === 'bar') {
-                dotsContainer.classList.add('bar-style');
-            }
-
-            section.dots.forEach(dotData => {
-                const dot = document.createElement('div');
-                dot.className = 'indicator-dot';
-                dot.setAttribute('data-slide-index', dotData.index);
+                const label = document.createElement('div');
+                label.className = 'section-label';
+                label.innerText = section.title;
                 
                 if (isClickable) {
-                    dot.style.cursor = 'pointer';
-                    dot.style.pointerEvents = 'auto'; 
-                    // Use capture phase
-                    dot.addEventListener('click', (e) => {
+                    label.style.cursor = 'pointer';
+                    label.style.pointerEvents = 'auto'; 
+                    label.addEventListener('click', (e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         e.stopImmediatePropagation();
-                        console.log('Navigating to slide:', dotData);
-                        if (dotData.h !== undefined && dotData.v !== undefined) {
-                            reveal.slide(dotData.h, dotData.v);
+                        const target = section.dots[0];
+                        if (target.h !== undefined && target.v !== undefined) {
+                            reveal.slide(target.h, target.v);
                         } else {
-                            reveal.slide(dotData.index);
+                            reveal.slide(target.index);
                         }
                     }, true);
                 }
+                
+                sectionDiv.appendChild(label);
 
-                if (true) { // Always add listener, check flag inside
+                const dotsContainer = document.createElement('div');
+                dotsContainer.className = 'dots-container';
+                const currentStyleConfig = indicatorContainer.getAttribute('data-style') || styleConfig;
+                if (currentStyleConfig === 'bar') {
+                    dotsContainer.classList.add('bar-style');
+                }
+
+                section.dots.forEach(dotData => {
+                    const dot = document.createElement('div');
+                    dot.className = 'indicator-dot';
+                    dot.setAttribute('data-slide-index', dotData.index);
+                    
+                    if (isClickable) {
+                        dot.style.cursor = 'pointer';
+                        dot.style.pointerEvents = 'auto'; 
+                        dot.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.stopImmediatePropagation();
+                            if (dotData.h !== undefined && dotData.v !== undefined) {
+                                reveal.slide(dotData.h, dotData.v);
+                            } else {
+                                reveal.slide(dotData.index);
+                            }
+                        }, true);
+                    }
+
                     dot.addEventListener('mouseenter', (e) => {
-                        if (!showTooltips) return; // Check flag
+                        if (!showTooltips) return;
                         tooltip.innerText = dotData.title;
                         tooltip.classList.add('visible');
                         const rect = dot.getBoundingClientRect();
                         const tooltipHeight = tooltip.offsetHeight || 30;
                         
-                        // Calculate position relative to viewport (since tooltip is position:fixed on body)
                         tooltip.style.left = (rect.left + rect.width/2) + 'px';
                         
-                        if (position === 'top') {
+                        const curPos = indicatorContainer.getAttribute('data-position') || position;
+                        if (curPos === 'top') {
                             tooltip.style.top = (rect.bottom + 8) + 'px';
                             tooltip.classList.add('bottom');
                         } else {
@@ -855,15 +855,54 @@ input[type="color"] {
                     dot.addEventListener('mouseleave', () => {
                         tooltip.classList.remove('visible');
                     });
-                }
 
-                dotsContainer.appendChild(dot);
+                    dotsContainer.appendChild(dot);
+                });
+
+                sectionDiv.appendChild(dotsContainer);
+                indicatorContainer.appendChild(sectionDiv);
             });
+            
+            const panel = document.querySelector('.indicator-settings-panel');
+            if(panel) {
+                const anim = panel.querySelector('.indicator-btn-group[data-setting="animation"] .active')?.getAttribute('data-value');
+                if (anim && anim !== 'none') {
+                    document.querySelectorAll('.dots-container').forEach(dc => dc.classList.add(`anim-${anim}`));
+                }
+            }
+        }
+        buildDots();
 
-            sectionDiv.appendChild(dotsContainer);
-            sectionDiv.setAttribute('data-section-index', sections.indexOf(section));
-            indicatorContainer.appendChild(sectionDiv);
-        });
+        // --- Theme accent-color inheritance ---
+        // Scans common Reveal.js CSS variables to auto-seed --primary-color
+        // Only runs when no user-saved color exists
+        function inheritThemeColor() {
+            const saved = localStorage.getItem('quarto-indicator-settings');
+            if (saved) {
+                try {
+                    const s = JSON.parse(saved);
+                    if (s.primaryColor) return; // User has an explicit preference
+                } catch(e) {}
+            }
+            const cs = getComputedStyle(document.documentElement);
+            const candidates = [
+                '--r-link-color',        // Reveal.js default
+                '--link-color',          // Some third-party themes
+                '--accent',              // Generic accent
+                '--r-selection-color',   // Reveal selection highlight
+                '--c-accent',            // clean-revealjs
+                '--highlightColor'       // moon/night themes
+            ];
+            for (const v of candidates) {
+                const val = cs.getPropertyValue(v).trim();
+                if (val && val !== 'transparent' && val !== 'none' && val !== '') {
+                    document.documentElement.style.setProperty('--primary-color', val);
+                    document.documentElement.style.setProperty('--completed-color', val);
+                    console.log('[ProgressIndicator] Inherited theme color', v, '=', val);
+                    break;
+                }
+            }
+        }
 
         function updateTheme() {
             // Detect theme brightness by looking at background color
@@ -890,22 +929,58 @@ input[type="color"] {
             }
         }
 
+        // Helper: compute the dot-number (1-based position of currentIndex among dot indices)
+        function getDotPosition(currentIndex) {
+            const allDots = document.querySelectorAll('.indicator-dot');
+            let pos = 0;
+            allDots.forEach(dot => {
+                const idx = parseInt(dot.getAttribute('data-slide-index'));
+                if (idx <= currentIndex) pos++;
+            });
+            return pos;
+        }
+
+        // Helper: total dot count
+        function getTotalDots() {
+            return document.querySelectorAll('.indicator-dot').length;
+        }
+
+        // Override or restore Reveal's slide number text
+        function updateSlideNumber(currentIndex) {
+            const el = document.querySelector('.reveal .slide-number');
+            if (!el) return;
+            if (dotPageCount) {
+                const pos = getDotPosition(currentIndex);
+                const total = getTotalDots();
+                if (total > 0) {
+                    el.textContent = `${pos} / ${total}`;
+                }
+            } else {
+                // Let Reveal.js re-generate the original number
+                el.textContent = '';
+            }
+        }
+
         function updateDots(event) {
             updateTheme();
             const revealEl = document.querySelector('.reveal');
-            // We still use flat index for progress calculation
-            const currentIndex = reveal.getSlidePastCount();
+            
+            // Calculate absolute flat index using the DOM array to match dot generation logic,
+            // ignoring Reveal's internal count which skips 'uncounted' slides.
+            const currentSlide = reveal.getCurrentSlide();
+            const allSlides = Array.from(document.querySelectorAll('.reveal .slides section:not(.stack)'));
+            const currentIndex = allSlides.indexOf(currentSlide);
+            
             console.log(`DEBUG: updateDots - Current: ${currentIndex}`);
             
             // Hide on title slide logic + .hide-progress support + manual hide
-            const currentSlide = reveal.getCurrentSlide();
             const isExplicitlyHidden = currentSlide && (
                 currentSlide.classList.contains('hide-progress') || 
                 (currentSlide.parentElement && currentSlide.parentElement.tagName === 'SECTION' && currentSlide.parentElement.classList.contains('hide-progress'))
             );
             
             // Check if hidden by index in settings
-            const isManuallyHidden = hiddenSlides.has(currentIndex);
+            const isManuallyHidden = hiddenIndicatorSlides.has(currentIndex);
 
             if ((hideOnTitle && currentIndex === 0) || isExplicitlyHidden || isManuallyHidden) {
                 indicatorContainer.classList.remove('visible');
@@ -981,6 +1056,9 @@ input[type="color"] {
             
             // Trigger layout update
             if (reveal.layout) reveal.layout();
+
+            // Update slide number override
+            updateSlideNumber(currentIndex);
 
             const allDots = document.querySelectorAll('.indicator-dot');
             let activeSectionIndex = -1;
@@ -1083,15 +1161,8 @@ input[type="color"] {
                     targetPanel.appendChild(newList);
                 }
                 
-            } else {
-                // Fallback: Floating Button if menu plugin is not present
-                const btn = document.createElement('div');
-                btn.className = 'indicator-settings-btn';
-                btn.innerHTML = '⚙️';
-                btn.title = 'Progress Settings';
-                btn.onclick = togglePanel;
-                document.body.appendChild(btn);
             }
+            // Note: if no Reveal menu plugin is found, the panel is still accessible via the 'i' keyboard shortcut.
             
             // Initial Sync
             if (li) {
@@ -1229,6 +1300,31 @@ input[type="color"] {
                 <div class="indicator-setting-item" style="display: flex; align-items: center; justify-content: space-between;">
                     <span class="indicator-setting-label" style="margin: 0;">Show Tooltips</span>
                     <input type="checkbox" id="indicatorTooltipToggle" style="width: 20px; height: 20px; cursor: pointer;">
+                </div>
+
+                <div class="indicator-setting-item" style="display: flex; align-items: center; justify-content: space-between;">
+                    <span class="indicator-setting-label" style="margin: 0;">Page Number: Dots Only</span>
+                    <input type="checkbox" id="indicatorDotPageCount" style="width: 20px; height: 20px; cursor: pointer;">
+                </div>
+
+                <div class="indicator-setting-item" style="display: flex; align-items: center; justify-content: space-between;">
+                    <span class="indicator-setting-label" style="margin: 0;">Auto-hide on Idle</span>
+                    <input type="checkbox" id="indicatorAutoHide" style="width: 20px; height: 20px; cursor: pointer;">
+                </div>
+
+                <!-- Keyboard Shortcuts -->
+                <div class="indicator-settings-header" style="margin-top: 15px; padding: 10px 0; border: none;">
+                    <span>Keyboard Shortcuts</span>
+                </div>
+                <div class="indicator-setting-item" style="display: flex; align-items: center; justify-content: space-between;">
+                    <span class="indicator-setting-label" style="margin: 0;">Open Settings</span>
+                    <input type="text" id="indicatorSettingsKey" maxlength="1"
+                        style="width: 36px; height: 28px; text-align: center; font-size: 14px; font-weight: bold; border: 1px solid #ddd; border-radius: 6px; background: #f8f8f8; text-transform: uppercase; cursor: pointer;">
+                </div>
+                <div class="indicator-setting-item" style="display: flex; align-items: center; justify-content: space-between;">
+                    <span class="indicator-setting-label" style="margin: 0;">Toggle Visibility</span>
+                    <input type="text" id="indicatorToggleKey" maxlength="1"
+                        style="width: 36px; height: 28px; text-align: center; font-size: 14px; font-weight: bold; border: 1px solid #ddd; border-radius: 6px; background: #f8f8f8; text-transform: uppercase; cursor: pointer;">
                 </div>
 
                 <!-- Slide Visibility Manager -->
@@ -1529,11 +1625,22 @@ input[type="color"] {
         function renderSlideList() {
             slideListContainer.innerHTML = '';
             
-            // Get all slides including vertical ones
-            const allSlides = reveal.getSlides();
+            const allSlides = Array.from(document.querySelectorAll('.reveal .slides section:not(.stack)'));
             
+            const header = document.createElement('div');
+            header.style.display = 'flex';
+            header.style.justifyContent = 'space-between';
+            header.style.alignItems = 'center';
+            header.style.fontSize = '10px';
+            header.style.fontWeight = 'bold';
+            header.style.color = '#666';
+            header.style.padding = '4px 8px';
+            header.style.borderBottom = '1px solid #ddd';
+            header.style.marginBottom = '2px';
+            header.innerHTML = `<span style="flex:1;">Slide</span> <span style="width: 30px; text-align:center;" title="Include as a dot in progress indicator">Dot</span> <span style="width: 30px; text-align:center;" title="Show indicator bar when on this slide">Bar</span>`;
+            slideListContainer.appendChild(header);
+
             allSlides.forEach((slide, idx) => {
-                // Get title accurately
                 const h1 = slide.querySelector('h1');
                 const h2 = slide.querySelector('h2');
                 const h3 = slide.querySelector('h3');
@@ -1549,26 +1656,44 @@ input[type="color"] {
                 item.style.borderBottom = '1px solid #f0f0f0';
                 
                 const label = document.createElement('span');
-                label.innerText = `${idx + 1}. ${title.length > 25 ? title.substring(0, 22) + '...' : title}`;
+                label.innerText = `${idx + 1}. ${title.length > 20 ? title.substring(0, 18) + '...' : title}`;
                 label.title = title;
+                label.style.flex = '1';
+                item.appendChild(label);
                 
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.checked = !hiddenSlides.has(idx);
-                checkbox.style.cursor = 'pointer';
-                
-                checkbox.addEventListener('change', (e) => {
-                    if (e.target.checked) {
-                        hiddenSlides.delete(idx);
-                    } else {
-                        hiddenSlides.add(idx);
-                    }
+                const dotDiv = document.createElement('div');
+                dotDiv.style.width = '30px';
+                dotDiv.style.textAlign = 'center';
+                const dotCheck = document.createElement('input');
+                dotCheck.type = 'checkbox';
+                dotCheck.checked = !omittedSlides.has(idx);
+                dotCheck.style.cursor = 'pointer';
+                dotCheck.addEventListener('change', (e) => {
+                    if (e.target.checked) omittedSlides.delete(idx);
+                    else omittedSlides.add(idx);
+                    buildDots();    
+                    updateDots();   
+                    saveSettings();
+                });
+                dotDiv.appendChild(dotCheck);
+                item.appendChild(dotDiv);
+
+                const barDiv = document.createElement('div');
+                barDiv.style.width = '30px';
+                barDiv.style.textAlign = 'center';
+                const barCheck = document.createElement('input');
+                barCheck.type = 'checkbox';
+                barCheck.checked = !hiddenIndicatorSlides.has(idx);
+                barCheck.style.cursor = 'pointer';
+                barCheck.addEventListener('change', (e) => {
+                    if (e.target.checked) hiddenIndicatorSlides.delete(idx);
+                    else hiddenIndicatorSlides.add(idx);
                     updateDots();
                     saveSettings();
                 });
-                
-                item.appendChild(label);
-                item.appendChild(checkbox);
+                barDiv.appendChild(barCheck);
+                item.appendChild(barDiv);
+
                 slideListContainer.appendChild(item);
             });
         }
@@ -1583,6 +1708,165 @@ input[type="color"] {
                 createTooltip();
             }
             saveSettings();
+        });
+
+        // Dot Page Count Toggle
+        const dotPageCountToggle = panel.querySelector('#indicatorDotPageCount');
+        dotPageCountToggle.checked = dotPageCount;
+        dotPageCountToggle.addEventListener('change', (e) => {
+            dotPageCount = e.target.checked;
+            const currentSlide = reveal.getCurrentSlide();
+            const allSlides = Array.from(document.querySelectorAll('.reveal .slides section:not(.stack)'));
+            const currentIndex = allSlides.indexOf(currentSlide);
+            updateSlideNumber(currentIndex);
+            saveSettings();
+        });
+
+        // Auto-hide on idle
+        const autoHideToggle = panel.querySelector('#indicatorAutoHide');
+        autoHideToggle.checked = autoHide;
+        let idleTimer = null;
+        const IDLE_DELAY = 2500; // ms before fading
+
+        function applyAutoHide() {
+            // Ensure the container has a CSS transition
+            container.style.transition = 'opacity 0.6s ease, transform 0.3s ease';
+            if (!autoHide) {
+                clearTimeout(idleTimer);
+                container.style.opacity = '';
+                container.style.pointerEvents = '';
+                return;
+            }
+            // Start idle timer
+            function resetIdle() {
+                clearTimeout(idleTimer);
+                container.style.opacity = '1';
+                container.style.pointerEvents = 'auto';
+                idleTimer = setTimeout(() => {
+                    // Don't hide if settings panel is open
+                    if (!panel.classList.contains('visible')) {
+                        container.style.opacity = '0.08';
+                        container.style.pointerEvents = 'none';
+                    }
+                }, IDLE_DELAY);
+            }
+            document.addEventListener('mousemove', resetIdle);
+            document.addEventListener('keydown', resetIdle);
+            document.addEventListener('mousedown', resetIdle);
+            // Kick off immediately
+            resetIdle();
+            // Store cleanup so we can remove listeners when disabled
+            autoHideToggle._cleanup = () => {
+                clearTimeout(idleTimer);
+                document.removeEventListener('mousemove', resetIdle);
+                document.removeEventListener('keydown', resetIdle);
+                document.removeEventListener('mousedown', resetIdle);
+            };
+        }
+
+        autoHideToggle.addEventListener('change', (e) => {
+            if (!autoHide && autoHideToggle._cleanup) {
+                autoHideToggle._cleanup();
+                autoHideToggle._cleanup = null;
+            }
+            autoHide = e.target.checked;
+            applyAutoHide();
+            saveSettings();
+        });
+
+        // Keyboard Shortcut Customization
+        const settingsKeyInput = panel.querySelector('#indicatorSettingsKey');
+        const toggleKeyInput   = panel.querySelector('#indicatorToggleKey');
+        settingsKeyInput.value = settingsKey.toUpperCase();
+        toggleKeyInput.value   = toggleKey.toUpperCase();
+
+        // Reveal.js built-in keys that must not be overridden
+        const REVEAL_RESERVED = new Set([
+            'arrowright','arrowleft','arrowup','arrowdown',
+            ' ','n','l','j','p','h','k',           // navigation
+            'b','.',                                 // pause
+            'f',                                     // fullscreen
+            'g',                                     // jump to slide
+            'escape','o',                            // overview
+            'e',                                     // pdf export
+            'm',                                     // menu
+            'r',                                     // scroll view
+            's',                                     // speaker notes
+        ]);
+
+        const REVEAL_LABELS = {
+            ' ': 'Space (Next slide)', n: 'N (Next)', l: 'L (Next)', j: 'J (Next)',
+            p: 'P (Prev)', h: 'H (Prev)', k: 'K (Prev)',
+            b: 'B (Pause)', '.': '. (Pause)', f: 'F (Fullscreen)',
+            g: 'G (Jump to slide)', escape: 'ESC (Overview)', o: 'O (Overview)',
+            e: 'E (PDF export)', m: 'M (Menu)', r: 'R (Scroll view)', s: 'S (Speaker notes)',
+        };
+
+        let keyWarningEl = null;
+        function showKeyWarning(input, message) {
+            input.style.borderColor = '#f66';
+            input.style.background  = '#fff0f0';
+            if (!keyWarningEl) {
+                keyWarningEl = document.createElement('div');
+                keyWarningEl.style.cssText = [
+                    'position:absolute',
+                    'background:#1e1e2e',
+                    'color:#f8f8f2',
+                    'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif',
+                    'font-size:11px',
+                    'font-weight:500',
+                    'line-height:1.4',
+                    'padding:5px 10px',
+                    'border-radius:6px',
+                    'box-shadow:0 4px 12px rgba(0,0,0,0.3)',
+                    'pointer-events:none',
+                    'white-space:nowrap',
+                    'letter-spacing:0.2px',
+                    'z-index:99999'
+                ].join(';') + ';';
+                document.body.appendChild(keyWarningEl);
+            }
+            keyWarningEl.textContent = '⚠️ ' + message;
+            const rect = input.getBoundingClientRect();
+            keyWarningEl.style.left = rect.left + 'px';
+            keyWarningEl.style.top  = (rect.bottom + 4) + 'px';
+            keyWarningEl.style.display = 'block';
+        }
+        function clearKeyWarning(input) {
+            input.style.borderColor = '#ddd';
+            input.style.background  = '#f8f8f8';
+            if (keyWarningEl) keyWarningEl.style.display = 'none';
+        }
+
+        function validateKey(k, otherKey, input) {
+            if (k.length !== 1)        { showKeyWarning(input, 'Enter a single character'); return false; }
+            if (k === otherKey)        { showKeyWarning(input, 'Conflicts with the other shortcut'); return false; }
+            if (REVEAL_RESERVED.has(k))  { showKeyWarning(input, 'Reserved by Reveal.js: ' + (REVEAL_LABELS[k] || k.toUpperCase())); return false; }
+            clearKeyWarning(input);
+            return true;
+        }
+
+        settingsKeyInput.addEventListener('input', (e) => {
+            const k = e.target.value.trim().toLowerCase();
+            e.target.value = k.toUpperCase();
+            if (validateKey(k, toggleKey, settingsKeyInput)) {
+                settingsKey = k;
+                saveSettings();
+            }
+        });
+
+        toggleKeyInput.addEventListener('input', (e) => {
+            const k = e.target.value.trim().toLowerCase();
+            e.target.value = k.toUpperCase();
+            if (validateKey(k, settingsKey, toggleKeyInput)) {
+                toggleKey = k;
+                saveSettings();
+            }
+        });
+
+        // Hide warning when input loses focus
+        [settingsKeyInput, toggleKeyInput].forEach(inp => {
+            inp.addEventListener('blur', () => { if (keyWarningEl) keyWarningEl.style.display = 'none'; });
         });
 
         // Populate initially
@@ -1669,7 +1953,8 @@ progress-indicator:
                 animation: panel.querySelector('.indicator-btn-group[data-setting="animation"] .active')?.getAttribute('data-value') || 'none',
                 theme: themeContainer.querySelector('.theme-swatch.active')?.getAttribute('data-value') || 'none',
                 hideOnTitle: hideOnTitle,
-                hiddenSlides: Array.from(hiddenSlides)
+                hiddenIndicatorSlides: Array.from(hiddenIndicatorSlides),
+                omittedSlides: Array.from(omittedSlides)
             };
             const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -1731,7 +2016,6 @@ progress-indicator:
                     alignment: container.getAttribute('data-alignment'),
                     primaryColor: getComputedStyle(root).getPropertyValue('--primary-color').trim(),
                     inactiveColor: getComputedStyle(root).getPropertyValue('--inactive-color').trim(),
-                    labelColor: getComputedStyle(root).getPropertyValue('--label-color').trim(),
                     bgColor: getComputedStyle(root).getPropertyValue('--indicator-bg').trim(),
                     size: getComputedStyle(root).getPropertyValue('--dot-size').trim(),
                     spacing: getComputedStyle(root).getPropertyValue('--section-spacing').trim(),
@@ -1740,7 +2024,12 @@ progress-indicator:
                     theme: themeContainer.querySelector('.theme-swatch.active')?.getAttribute('data-value') || 'none',
                     hideOnTitle: hideOnTitle,
                     showTooltips: showTooltips,
-                    hiddenSlides: Array.from(hiddenSlides)
+                    dotPageCount: dotPageCount,
+                    settingsKey: settingsKey,
+                    toggleKey: toggleKey,
+                    autoHide: autoHide,
+                    hiddenIndicatorSlides: Array.from(hiddenIndicatorSlides),
+                    omittedSlides: Array.from(omittedSlides)
                 };
                 localStorage.setItem('quarto-indicator-settings', JSON.stringify(settings));
             }
@@ -1793,6 +2082,27 @@ progress-indicator:
                 }
                 
                 // Tooltip Toggle
+                if (s.dotPageCount !== undefined) {
+                    dotPageCount = s.dotPageCount;
+                    const dotPageCountToggle = panel.querySelector('#indicatorDotPageCount');
+                    if (dotPageCountToggle) dotPageCountToggle.checked = dotPageCount;
+                }
+                if (s.settingsKey) {
+                    settingsKey = s.settingsKey;
+                    const el = panel.querySelector('#indicatorSettingsKey');
+                    if (el) el.value = settingsKey.toUpperCase();
+                }
+                if (s.toggleKey) {
+                    toggleKey = s.toggleKey;
+                    const el = panel.querySelector('#indicatorToggleKey');
+                    if (el) el.value = toggleKey.toUpperCase();
+                }
+                if (s.autoHide !== undefined) {
+                    autoHide = s.autoHide;
+                    const el = panel.querySelector('#indicatorAutoHide');
+                    if (el) el.checked = autoHide;
+                    if (autoHide) applyAutoHide();
+                }
                 if (s.showTooltips !== undefined) {
                     showTooltips = s.showTooltips;
                     const tooltipToggle = panel.querySelector('#indicatorTooltipToggle');
@@ -1831,8 +2141,17 @@ progress-indicator:
                         btn.classList.toggle('active', btn.getAttribute('data-value') === s.style);
                     });
                 }
-                if (s.hiddenSlides) {
-                    hiddenSlides = new Set(s.hiddenSlides);
+                if (s.hiddenSlides) { // backwards compatibility
+                    hiddenIndicatorSlides = new Set(s.hiddenSlides);
+                }
+                if (s.hiddenIndicatorSlides) {
+                    hiddenIndicatorSlides = new Set(s.hiddenIndicatorSlides);
+                }
+                if (s.omittedSlides) {
+                    omittedSlides = new Set(s.omittedSlides);
+                }
+                if (s.hiddenSlides || s.hiddenIndicatorSlides || s.omittedSlides) {
+                    if (typeof buildDots === 'function') buildDots();
                     if (typeof renderSlideList === 'function') renderSlideList();
                 }
                 if (s.animation) {
@@ -1884,7 +2203,7 @@ progress-indicator:
                 // Ignore if typing in an input text field
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
                 
-                if (e.key.toLowerCase() === 'i') {
+                if (e.key.toLowerCase() === settingsKey) {
                     const isVisible = panel.classList.toggle('visible');
                     const myItem = document.querySelector('.slide-tool-item.progress-settings-item');
                     if (myItem) {
@@ -1892,7 +2211,7 @@ progress-indicator:
                         else myItem.classList.remove('selected');
                     }
                 }
-                if (e.key.toLowerCase() === 'x') {
+                if (e.key.toLowerCase() === toggleKey) {
                     container.classList.toggle('visible');
                     // Ensure it stays hidden/visible by overriding logic efficiently
                     const isVisible = container.classList.contains('visible');
@@ -1907,12 +2226,13 @@ progress-indicator:
         reveal.on('ready', updateDots);
         
         // Initialize Settings Menu if not already present
-        if (!document.querySelector('.indicator-settings-btn')) {
+        if (!document.querySelector('.indicator-settings-panel')) {
              createSettingsMenu(indicatorContainer, config);
         }
 
         // Initial update
         updateDots();
+        inheritThemeColor(); // Auto-seed from theme if no saved preference
         console.log("Progress Indicator Initialized Successfully.");
         
         } catch (e) {
@@ -1934,7 +2254,19 @@ progress-indicator:
         });
     }
 })();
-</script>
 
+]====]
 
+function Pandoc(doc)
+  if not quarto.doc.is_format('revealjs') then
+    return doc
+  end
 
+  quarto.doc.include_text(
+    'after-body',
+    '<style>\n' .. css .. '\n</style>\n' ..
+    '<script>\n' .. js  .. '\n</script>'
+  )
+
+  return doc
+end
