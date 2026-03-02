@@ -2,9 +2,8 @@ title: Progress Indicator
 author: ofurkancoban
 url: https://github.com/ofurkancoban/QuartoProgressIndicator
 website: https://github.com/ofurkancoban/QuartoProgressIndicator
-version: 1.0.5
-quarto-version: ">=1.0.0"
+version: 1.1.0
+quarto-version: ">=1.2.0"
 contributes:
-  formats:
-    revealjs:
-      include-after-body: progress-indicator.html
+  filters:
+    - progress-indicator.lua

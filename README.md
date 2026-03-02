@@ -1,28 +1,28 @@
 # Quarto Progress Indicator
 
 A lightweight, premium progress indicator for Quarto Reveal.js presentations.
-This extension is built with **pure JavaScript and CSS**, requiring **no Lua dependency**, making it easy to install and highly performant.
+Built fully native as a **Quarto Lua Filter** — just one single file, zero external dependencies.
 
 ![Quarto Progress Indicator](https://github.com/user-attachments/assets/000dcf80-c6bf-496e-b032-e1495d620144)
 
 ## Key Features
 
+- **🎯 Auto-hide on Idle**: Indicator smoothly fades out when the mouse or keyboard is inactive for a cleaner presentation view.
 - **🎨 Theme Palettes**: 8 curated themes — 4 light (Ocean, Emerald, Sunset, Lavender) and 4 dark (Dracula, Nord, Gruvbox, Tokyo Night).
-- **🖌️ Full Color Control**: Customize active dot, inactive dot, label text, and background colors independently.
+- **🖌️ Full Color Control**: Customize active dot, inactive dot, label, and background colors independently.
+- **🌈 Smart Theme Inheritance**: Automatically detects your active Reveal.js theme's primary accent color on startup.
+- **⌨️ Keyboard Shortcuts UI**: Customize the 'Settings' and 'Toggle' hotkeys directly from the settings panel.
 - **✨ Dynamic Animations**: Pulse, Glow, or Bounce effects for the active slide dot.
 - **🔄 Animated Position Toggle**: Smooth exit/enter animation when switching between Top and Bottom positions.
-- **🌐 Universal Theme Support**: Works across all Reveal.js themes (simple, moon, league, clean-revealjs, etc.) without hardcoded CSS selectors.
-- **📌 Smart Overlap Prevention**: Automatically detects and adjusts all `position: fixed` UI elements to prevent collisions with the indicator bar.
-- **💾 Smart Persistence**: All settings are saved in `localStorage` and persist across reloads.
-- **💡 Tooltip Toggle**: Show or hide slide titles on hover.
-- **📤 Export & Import**: Save/load settings as JSON files, or copy as YAML/CSS for permanent project configuration.
-- **⌨️ Keyboard Shortcuts**: Instant access to configuration and visibility controls.
-- **📱 Responsive Design**: Automatically adapts to different screen sizes and light/dark modes.
-- **🚀 Zero Lua Dependency**: Works purely in the browser environment.
+- **🌐 Universal Theme Support**: Works across all Reveal.js themes without hardcoded CSS selectors.
+- **📌 Smart Overlap Prevention**: Automatically adjusts `position: fixed` UI elements to prevent overlap with the indicator bar.
+- **💾 Full Persistence**: All settings are saved to `localStorage` and restored on reload.
+- **📋 Slide Visibility Manager**: Per-slide controls with two independent columns (Dot & Bar).
+- **🔢 Dot-Only Page Counter**: Optionally override the Reveal.js slide number to count only indicator dots.
+- **💡 Tooltip Toggle**: Show or hide slide title tooltips on dot hover.
+- **🚀 Native Quarto Filter**: Single Lua file architecture. Clean installation, no extra CSS/JS clutter.
 
 ## Installation
-
-Add the extension to your project:
 
 ```bash
 quarto add ofurkancoban/QuartoProgressIndicator
@@ -30,37 +30,34 @@ quarto add ofurkancoban/QuartoProgressIndicator
 
 ## Usage
 
-To use the extension, include the HTML file in your `_quarto.yml` or document header:
+Use the extension as a Quarto filter in your `_quarto.yml` or document header:
 
 ```yaml
-format:
-  revealjs:
-    include-after-body: _extensions/ofurkancoban/progress-indicator/progress-indicator.html
+filters:
+  - ofurkancoban/progress-indicator
 ```
 
 ### Keyboard Shortcuts
 
 | Shortcut | Action |
 | :--- | :--- |
-| <kbd>i</kbd> | Open/Close Settings Menu |
-| <kbd>x</kbd> | Toggle Indicator Visibility |
+| <kbd>i</kbd> | Open/Close Settings Panel (Customizable) |
+| <kbd>x</kbd> | Toggle Indicator Visibility (Customizable) |
 
 ## Interactive Configuration
 
 Press <kbd>i</kbd> during your presentation to open the **Display Settings** panel. From here you can:
 
-- **Position & Alignment**: Move the indicator to Top/Bottom with smooth slide animation, or align Left/Center/Right.
-- **Themes**: Switch between 8 professional color palettes — each theme sets active, inactive, background, and label colors simultaneously.
-- **Active & Inactive Colors**: Fine-tune dot and label colors with live color pickers.
-- **Background Color**: Customize the indicator bar's background color.
-- **Styling**: Toggle between **Dots** and **Progress Bar** styles.
-- **Visibility Manager**: Hide the indicator on specific slides or the title slide.
-- **Tooltip Toggle**: Show or hide slide title tooltips on hover.
+- **Position & Alignment**: Move the indicator to Top/Bottom with smooth animation, or align Left/Center/Right.
+- **Themes & Inheritance**: Switch between 8 color palettes or let the extension **Auto-inherit** your current Reveal.js theme's accent color.
+- **Active & Inactive Colors**: Fine-tune dot colors with live color pickers. Colors are fully persisted across reloads.
+- **Auto-hide on Idle**: Automatically fade out the indicator when presentation is idle to keep the focus on content.
+- **Page Number: Dots Only**: Replace default slide counter with a **dot-based count**.
+- **Keyboard Shortcuts**: Reassign the default `i` and `x` hotkeys to any single keystroke.
+- **Slide Visibility Manager**: Manage exactly which slides show dots and bars.
 - **Export Config**: Copy as YAML/CSS or download/upload settings as JSON.
 
 ## YAML Configuration
-
-While the interactive menu is the easiest way to customize, you can also set defaults in your `_quarto.yml`:
 
 ```yaml
 format:
@@ -72,7 +69,7 @@ format:
       hide-on-title: true   # true | false
 ```
 
-And customize aesthetics in your CSS:
+CSS customization:
 
 ```css
 :root {
@@ -85,13 +82,23 @@ And customize aesthetics in your CSS:
 }
 ```
 
+## Slide-Level Control
+
+To hide the indicator on a specific slide using class:
+
+```markdown
+## Q&A Slide {.hide-progress}
+```
+
+Or use the **Slide Visibility Manager** in the settings panel for a visual, per-slide interface — no class editing required.
+
 ## Universal Theme Compatibility
 
-The indicator automatically adapts to any Reveal.js theme by dynamically scanning the DOM for `position: fixed` elements and adjusting them to prevent overlap. This means it works out-of-the-box with:
+Works out-of-the-box with any Reveal.js theme:
 
-- Default Reveal.js themes (`simple`, `moon`, `night`, `league`, `serif`, etc.)
+- Default themes (`simple`, `moon`, `night`, `league`, `serif`, etc.)
 - Third-party themes (`clean-revealjs`, etc.)
-- Any custom theme with logos, footers, or plugin buttons (chalkboard, menu, etc.)
+- Custom themes with logos, footers, or plugin buttons (chalkboard, menu, etc.)
 
 ## License
 

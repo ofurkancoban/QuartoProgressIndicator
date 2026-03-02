@@ -1,7 +1,9 @@
 ---
 title: "Quarto Progress Indicator"
-subtitle: "Interactive & Professional Progress Tracking"
+subtitle: "Interactive & Professional Progress Tracking for Reveal.js"
 author: "ofurkancoban"
+filters:
+  - ofurkancoban/progress-indicator
 format:
   revealjs:
     theme: simple
@@ -11,12 +13,10 @@ format:
     progress: false
     center: true
     highlight-style: github
-    code-fold: false
-    preview-links: auto
     embed-resources: true
 ---
 
-# Introduction {data-section="Introduction"}
+# Introduction {#introduction}
 
 ## About this Extension
 
@@ -24,47 +24,108 @@ This extension adds a **premium**, **interactive** progress indicator to your Qu
 
 ::: {.callout-tip}
 ## Key Feature
-It runs purely on **JavaScript & CSS** with zero Lua dependencies!
+Built fully native as a **Quarto Lua Filter** — just one single file, zero external dependencies.
 :::
 
-[View on GitHub](https://github.com/ofurkancoban/quarto-progress-indicator)
+[View on GitHub](https://github.com/ofurkancoban/QuartoProgressIndicator)
 
 ## How It Works
 
-1.  **Tracking**: Listens to Reveal.js events.
-2.  **Grouping**: Groups slides by sections.
-3.  **Interaction**: Fully interactive dots and settings.
+1. **Native Lua Filter**: Clean integration with your Quarto project via `filters:`.
+2. **Intersection & Mutation Observers**: Intelligently tracks active slides and layout changes.
+3. **Auto-hide**: Fades out automatically when the presentation is idle.
+4. **Persistence**: All custom colors, shortcuts, and settings are saved to `localStorage`.
 
-# Interactive Settings {data-section="Interactive Features"}
+# Color & Themes {#themes}
 
-## Display Settings Panel
+## 8 Professional Palettes
 
-Press <kbd>i</kbd> anywhere in the presentation to open the **Configuration Menu**.
+Choose from **4 light** and **4 dark** themes via visual swatches:
 
-- **Position**: Toggle Top/Bottom.
-- **Alignment**: Left/Center/Right.
-- **Sliders**: Adjust dot size and spacing live.
-- **Visibility**: Toggle indicator on/off for specific slides.
+::: {.columns}
+::: {.column width="50%"}
+**Light Themes**
 
-## Theme Palettes
+- 🌊 **Ocean** — Deep Blue
+- 🌿 **Emerald** — Muted Green
+- 🌅 **Sunset** — Warm Orange
+- 💜 **Lavender** — Soft Purple
+:::
+::: {.column width="50%"}
+**Dark Themes**
 
-Choose from a variety of **Professional Palettes** using visual swatches:
+- 🧛 **Dracula** — Purple Night
+- ❄️ **Nord** — Arctic Blue
+- 🌻 **Gruvbox** — Warm Dark
+- 🌙 **Tokyo Night** — Neon Blue
+:::
+:::
 
-- **Nord**: Clean Arctic Blue
-- **Indigo**: Modern Purple/Blue
-- **Emerald**: Muted Professional Green
-- **Slate**: Corporate Grey/Blue
-- **Cyber**: Vibrant Modern Cyan
+## Full Color Persistence
 
-## Active Animations
+All color changes are **automatically saved** to `localStorage`:
+
+- ✅ Active dot color
+- ✅ Inactive dot color
+- ✅ Label text color
+- ✅ Background color
+
+You can also rely on **Theme Inheritance**: The extension automatically detects your Reveal.js theme and pulls its primary accent color on startup!
+
+# Animations {#animations}
+
+## Active Slide Animations
 
 Add flair to your active slide with CSS animations:
 
-- **Pulse**: Soft breathing effect.
-- **Glow**: Subtle luminous highlight.
-- **Bounce**: Playful jumping dot.
+| Animation | Effect |
+| :--- | :--- |
+| **Pulse** | Soft breathing scale effect |
+| **Glow** | Luminous halo highlight |
+| **Bounce** | Playful vertical jump |
+| **None** | Clean, flat style |
 
-# Configuration {data-section="Setup"}
+# Slide Visibility Manager {#visibility}
+
+## Per-Slide Dot & Bar Control
+
+Open settings (`i`) and scroll to **Slide Visibility**.
+
+Each slide has **two independent checkboxes**:
+
+| Column | What it controls |
+| :--- | :--- |
+| **Dot** | Include this slide as a dot in the indicator |
+| **Bar** | Show the indicator bar when on this slide |
+
+::: {.callout-note}
+All visibility settings are **saved automatically** — changes persist across reloads.
+:::
+
+## Class-Based Hiding
+
+Alternatively, add `.hide-progress` to any slide:
+
+```markdown
+## Q&A Slide {.hide-progress}
+```
+
+Or use `.skip-progress` to omit a slide from dots while keeping the bar visible.
+
+# Page Number: Dots Only {#page-number}
+
+## Override Slide Counter
+
+Enable **"Page Number: Dots Only"** in settings to replace the default slide counter with a **dot-based count**:
+
+- Regular counter: `5 / 18` (total slides)
+- Dots-only counter: `3 / 12` (only counted dots)
+
+::: {.callout-tip}
+Dots-only counter **automatically updates** when you add or remove slides from the indicator using the Slide Visibility Manager.
+:::
+
+# Configuration {#config}
 
 ## Installation
 
@@ -72,15 +133,19 @@ Add flair to your active slide with CSS animations:
 quarto add ofurkancoban/QuartoProgressIndicator
 ```
 
-## Setup in YAML
+## YAML Setup
 
 ```yaml
+filters:
+  - ofurkancoban/progress-indicator
+
 format:
   revealjs:
-    include-after-body: _extensions/ofurkancoban/progress-indicator/progress-indicator.html
     progress-indicator:
-      position: "bottom"
-      style: "dots"
+      position: "bottom"    # top | bottom
+      alignment: "center"   # left | center | right
+      style: "dots"         # dots | bar
+      hide-on-title: true
 ```
 
 ## CSS Customization
@@ -89,35 +154,45 @@ format:
 :root {
   --primary-color: #3b60e4;
   --inactive-color: #bbbbbb;
+  --indicator-bg: rgba(255, 255, 255, 0.9);
+  --label-color: #888;
   --dot-size: 8px;
+  --section-spacing: 15px;
 }
 ```
 
-# Shortcuts & Tips {data-section="Tips"}
+# Shortcuts & Tips {#shortcuts}
 
 ## Keyboard Shortcuts
 
 | Shortcut | Action |
 | :--- | :--- |
-| <kbd>i</kbd> | Open Display Settings |
+| <kbd>i</kbd> | Open/Close Settings Panel |
 | <kbd>x</kbd> | Hide/Show Indicator |
 
-## Hidden Slides
+::: {.callout-tip}
+You can **customize** these keyboard shortcuts anytime through the settings panel to avoid conflicts with your other tools.
+:::
 
-Add the `.hide-progress` class to any slide to hide the indicator:
+## Export & Import
 
-```markdown
-## QA Slide {.hide-progress}
-```
+Save your configuration for re-use:
 
-# Conclusion {data-section="Conclusion"}
+- **📋 Copy Config** — Exports current settings as YAML/CSS snippet
+- **💾 Export JSON** — Downloads settings as a JSON file
+- **📂 Import JSON** — Uploads a previously saved settings file
+- **🔄 Reset** — Restores all defaults
+
+# Conclusion {#conclusion}
 
 ## Summary
 
--   **Zero** Lua dependencies.
--   **Visual** theme selection.
--   **Smart** persistence across reloads.
--   **Easy** installation & extraction.
+- **Native** Quarto Lua Filter architecture
+- **Auto-hide** feature for distraction-free presenting
+- **Smart Theme Inheritance** for instant visual match
+- **8** professional theme palettes + Custom Colors
+- **Per-slide** dot and bar visibility control
+- **Customizable** Keyboard Shortcuts
 
 ## Thank You!
 
