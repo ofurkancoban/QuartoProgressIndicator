@@ -15,6 +15,7 @@ Built fully native as a **Quarto Lua Filter** — just one single file, zero ext
 - **✨ Dynamic Animations**: Pulse, Glow, or Bounce effects for the active slide dot.
 - **🔄 Animated Position Toggle**: Smooth exit/enter animation when switching between Top and Bottom positions.
 - **🌐 Universal Theme Support**: Works across all Reveal.js themes without hardcoded CSS selectors.
+- **📄 1:1 PDF Export Perfectifier**: High-fidelity PDF exports that look exactly like the screen version. Clones the progress bar into every printed slide with synchronized state (filled/active dots).
 - **📌 Smart Overlap Prevention**: Automatically adjusts `position: fixed` UI elements to prevent overlap with the indicator bar.
 - **💾 Full Persistence**: All settings are saved to `localStorage` and restored on reload.
 - **📋 Slide Visibility Manager**: Per-slide controls with two independent columns (Dot & Bar).

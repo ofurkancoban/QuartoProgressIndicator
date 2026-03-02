@@ -30,6 +30,13 @@ local css = [====[
     color: inherit; 
 }
 
+/* Speaker View Iframe protection */
+body.is-iframe .indicator-settings-btn,
+body.is-iframe .indicator-settings-panel {
+    display: none !important;
+    pointer-events: none !important;
+}
+
 /* Menu Item Hover Fix */
 .slide-menu-items .slide-tool-item.progress-settings-item a:hover {
     background-color: rgba(0, 0, 0, 0.05); /* Light theme hover */
@@ -656,6 +663,15 @@ local js = [====[
     function initProgressIndicator() {
         console.log("Initializing Quarto Progress Indicator...");
         try {
+            let isUpcoming = false;
+            if (window.self !== window.top) {
+                document.body.classList.add('is-iframe');
+                if (window.frameElement && (window.frameElement.id === 'upcoming-slide' || window.frameElement.classList.contains('future'))) {
+                    isUpcoming = true;
+                }
+            }
+            if (isUpcoming) return; // Completely disable in the upcoming slide iframe
+
             if (document.querySelector('.progress-indicator')) {
                 console.log("Indicator already exists, skipping.");
                 return;
