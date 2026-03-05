@@ -318,34 +318,14 @@ body.is-iframe .indicator-settings-panel {
 }
 /* Settings Menu Styles */
 .indicator-settings-btn {
-    position: fixed;
-    bottom: 20px;
-    left: 20px;
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(5px);
-    border-radius: 50%;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 3001;
-    transition: transform 0.3s ease, background 0.3s ease;
-    font-size: 20px;
-    color: #333;
-}
-
-.indicator-settings-btn:hover {
-    transform: rotate(90deg);
-    background: #fff;
+    display: none; /* Hidden to avoid blocking laser pointer – use 'i' key instead */
 }
 
 .indicator-settings-panel {
     position: fixed;
     bottom: 70px;
     left: 20px;
+    right: auto;
     width: 340px;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
@@ -1130,7 +1110,12 @@ local js = [====[
             // Define the click handler
             const togglePanel = () => {
                 const isVisible = panel.classList.toggle('visible');
+                // When panel opens, turn off the laser pointer if it's active
+                if (isVisible && typeof window.laserPointerSetPower === 'function') {
+                    window.laserPointerSetPower(false);
+                }
                 // Find our list item to toggle state
+
                 const myItem = document.querySelector('.slide-tool-item.progress-settings-item');
                 if (myItem) {
                      if (isVisible) {
@@ -2221,6 +2206,19 @@ progress-indicator:
                 
                 if (e.key.toLowerCase() === settingsKey) {
                     const isVisible = panel.classList.toggle('visible');
+                    if (isVisible) {
+                        // Panel opening: remember if laser was active, then turn it off
+                        window._laserWasActiveBeforePanel = document.body.classList.contains('laser-active');
+                        if (window._laserWasActiveBeforePanel && typeof window.laserPointerSetPower === 'function') {
+                            window.laserPointerSetPower(false);
+                        }
+                    } else {
+                        // Panel closing: restore laser if it was active before
+                        if (window._laserWasActiveBeforePanel && typeof window.laserPointerSetPower === 'function') {
+                            window.laserPointerSetPower(true);
+                        }
+                        window._laserWasActiveBeforePanel = false;
+                    }
                     const myItem = document.querySelector('.slide-tool-item.progress-settings-item');
                     if (myItem) {
                         if (isVisible) myItem.classList.add('selected');
