@@ -120,7 +120,7 @@ body.is-iframe .indicator-settings-panel {
 
 /* Dimming feature */
 .progress-indicator[data-dim="true"] .indicator-section {
-    opacity: 0.4;
+    opacity: 0.7;
     transition: opacity 0.3s ease;
 }
 
@@ -1010,7 +1010,7 @@ local js = [====[
                 const viewportEl = document.querySelector('.reveal-viewport') || document.body;
                 const isTop = indicatorContainer.getAttribute('data-position') === 'top';
                 const barHeight = indicatorContainer.offsetHeight || 50;
-                const offset = barHeight + 10; // bar height + gap
+                const offset = barHeight; // bar height only
 
                 // Canvas Resize Logic to prevent overlap (theme-agnostic)
                 viewportEl.style.setProperty('height', `calc(100vh - ${offset}px)`, 'important');
@@ -1032,7 +1032,7 @@ local js = [====[
                     if (indicatorContainer.contains(el)) return;
                     // Skip elements inside .reveal .slides (actual slide content)
                     if (el.closest('.slides')) return;
-                    // Skip tooltip and settings panel — they need position:fixed to render properly
+                    // Skip tooltip and settings panel - they need position:fixed to render properly
                     if (el.classList.contains('indicator-tooltip')) return;
                     if (el.classList.contains('indicator-settings-panel')) return;
                     
