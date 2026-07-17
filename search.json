@@ -1,0 +1,107 @@
+[
+  {
+    "objectID": "example.html#about-this-extension",
+    "href": "example.html#about-this-extension",
+    "title": "Quarto Progress Indicator",
+    "section": "About this Extension",
+    "text": "About this Extension\nThis extension adds a premium, interactive progress indicator to your Quarto presentations.\n\n\n\n\n\n\nKey Feature\n\n\nBuilt fully native as a Quarto Lua Filter — just one single file, zero external dependencies.\n\n\n\nView on GitHub"
+  },
+  {
+    "objectID": "example.html#how-it-works",
+    "href": "example.html#how-it-works",
+    "title": "Quarto Progress Indicator",
+    "section": "How It Works",
+    "text": "How It Works\n\nNative Lua Filter: Clean integration with your Quarto project via filters:.\nIntersection & Mutation Observers: Intelligently tracks active slides and layout changes.\nAuto-hide: Fades out automatically when the presentation is idle.\nPersistence: All custom colors, shortcuts, and settings are saved to localStorage."
+  },
+  {
+    "objectID": "example.html#professional-palettes",
+    "href": "example.html#professional-palettes",
+    "title": "Quarto Progress Indicator",
+    "section": "8 Professional Palettes",
+    "text": "8 Professional Palettes\nChoose from 4 light and 4 dark themes via visual swatches:\n\n\nLight Themes\n\n🌊 Ocean — Deep Blue\n🌿 Emerald — Muted Green\n🌅 Sunset — Warm Orange\n💜 Lavender — Soft Purple\n\n\nDark Themes\n\n🧛 Dracula — Purple Night\n❄️ Nord — Arctic Blue\n🌻 Gruvbox — Warm Dark\n🌙 Tokyo Night — Neon Blue"
+  },
+  {
+    "objectID": "example.html#full-color-persistence",
+    "href": "example.html#full-color-persistence",
+    "title": "Quarto Progress Indicator",
+    "section": "Full Color Persistence",
+    "text": "Full Color Persistence\nAll color changes are automatically saved to localStorage:\n\n✅ Active dot color\n✅ Inactive dot color\n✅ Label text color\n✅ Background color\n\nYou can also rely on Theme Inheritance: The extension automatically detects your Reveal.js theme and pulls its primary accent color on startup!"
+  },
+  {
+    "objectID": "example.html#active-slide-animations",
+    "href": "example.html#active-slide-animations",
+    "title": "Quarto Progress Indicator",
+    "section": "Active Slide Animations",
+    "text": "Active Slide Animations\nAdd flair to your active slide with CSS animations:\n\n\n\nAnimation\nEffect\n\n\n\n\nPulse\nSoft breathing scale effect\n\n\nGlow\nLuminous halo highlight\n\n\nBounce\nPlayful vertical jump\n\n\nNone\nClean, flat style"
+  },
+  {
+    "objectID": "example.html#per-slide-dot-bar-control",
+    "href": "example.html#per-slide-dot-bar-control",
+    "title": "Quarto Progress Indicator",
+    "section": "Per-Slide Dot & Bar Control",
+    "text": "Per-Slide Dot & Bar Control\nOpen settings (i) and scroll to Slide Visibility.\nEach slide has two independent checkboxes:\n\n\n\nColumn\nWhat it controls\n\n\n\n\nDot\nInclude this slide as a dot in the indicator\n\n\nBar\nShow the indicator bar when on this slide\n\n\n\n\n\n\n\n\n\nNote\n\n\nAll visibility settings are saved automatically — changes persist across reloads."
+  },
+  {
+    "objectID": "example.html#class-based-hiding",
+    "href": "example.html#class-based-hiding",
+    "title": "Quarto Progress Indicator",
+    "section": "Class-Based Hiding",
+    "text": "Class-Based Hiding\nAlternatively, add .hide-progress to any slide:\n## Q&A Slide {.hide-progress}\nOr use .skip-progress to omit a slide from dots while keeping the bar visible."
+  },
+  {
+    "objectID": "example.html#override-slide-counter",
+    "href": "example.html#override-slide-counter",
+    "title": "Quarto Progress Indicator",
+    "section": "Override Slide Counter",
+    "text": "Override Slide Counter\nEnable “Page Number: Dots Only” in settings to replace the default slide counter with a dot-based count:\n\nRegular counter: 5 / 18 (total slides)\nDots-only counter: 3 / 12 (only counted dots)\n\n\n\n\n\n\n\nTip\n\n\nDots-only counter automatically updates when you add or remove slides from the indicator using the Slide Visibility Manager."
+  },
+  {
+    "objectID": "example.html#installation",
+    "href": "example.html#installation",
+    "title": "Quarto Progress Indicator",
+    "section": "Installation",
+    "text": "Installation\nquarto add ofurkancoban/QuartoProgressIndicator"
+  },
+  {
+    "objectID": "example.html#yaml-setup",
+    "href": "example.html#yaml-setup",
+    "title": "Quarto Progress Indicator",
+    "section": "YAML Setup",
+    "text": "YAML Setup\nfilters:\n  - ofurkancoban/progress-indicator\n\nformat:\n  revealjs:\n    progress-indicator:\n      position: \"bottom\"    # top | bottom\n      alignment: \"center\"   # left | center | right\n      style: \"dots\"         # dots | bar\n      hide-on-title: true"
+  },
+  {
+    "objectID": "example.html#css-customization",
+    "href": "example.html#css-customization",
+    "title": "Quarto Progress Indicator",
+    "section": "CSS Customization",
+    "text": "CSS Customization\n:root {\n  --primary-color: #3b60e4;\n  --inactive-color: #bbbbbb;\n  --indicator-bg: rgba(255, 255, 255, 0.9);\n  --label-color: #888;\n  --dot-size: 8px;\n  --section-spacing: 15px;\n}"
+  },
+  {
+    "objectID": "example.html#keyboard-shortcuts",
+    "href": "example.html#keyboard-shortcuts",
+    "title": "Quarto Progress Indicator",
+    "section": "Keyboard Shortcuts",
+    "text": "Keyboard Shortcuts\n\n\n\nShortcut\nAction\n\n\n\n\ni\nOpen/Close Settings Panel\n\n\nx\nHide/Show Indicator\n\n\n\n\n\n\n\n\n\nTip\n\n\nYou can customize these keyboard shortcuts anytime through the settings panel to avoid conflicts with your other tools."
+  },
+  {
+    "objectID": "example.html#export-import",
+    "href": "example.html#export-import",
+    "title": "Quarto Progress Indicator",
+    "section": "Export & Import",
+    "text": "Export & Import\nSave your configuration for re-use:\n\n📋 Copy Config — Exports current settings as YAML/CSS snippet\n💾 Export JSON — Downloads settings as a JSON file\n📂 Import JSON — Uploads a previously saved settings file\n🔄 Reset — Restores all defaults"
+  },
+  {
+    "objectID": "example.html#summary",
+    "href": "example.html#summary",
+    "title": "Quarto Progress Indicator",
+    "section": "Summary",
+    "text": "Summary\n\nNative Quarto Lua Filter architecture\nAuto-hide feature for distraction-free presenting\nSmart Theme Inheritance for instant visual match\n8 professional theme palettes + Custom Colors\nPer-slide dot and bar visibility control\nCustomizable Keyboard Shortcuts"
+  },
+  {
+    "objectID": "example.html#thank-you",
+    "href": "example.html#thank-you",
+    "title": "Quarto Progress Indicator",
+    "section": "Thank You!",
+    "text": "Thank You!\nCheck out my other projects at: github.com/ofurkancoban"
+  }
+]
