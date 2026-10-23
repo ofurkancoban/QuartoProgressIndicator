@@ -30,7 +30,7 @@ local css = [====[
     color: inherit; 
 }
 
-/* Speaker View Iframe protection */
+/* Speaker view iframe protection (only the speaker view's slide frames) */
 body.is-iframe .indicator-settings-btn,
 body.is-iframe .indicator-settings-panel {
     display: none !important;
@@ -57,9 +57,8 @@ body.is-iframe .indicator-settings-panel {
     background: var(--indicator-bg, rgba(255, 255, 255, 0.9));
     backdrop-filter: blur(5px);
     display: flex;
-    justify-content: center !important; /* Force center */
+    justify-content: center; /* Alignment overrides this inline */
     align-items: center;
-    z-index: 1000;
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     padding: 5px 20px 15px 20px; /* Shift content UP: less top, more bottom */
     border-radius: 0; /* Full width shouldn't have radius */
@@ -75,6 +74,13 @@ body.is-iframe .indicator-settings-panel {
 .progress-indicator.visible {
     opacity: 1;
     transform: translateY(0) !important;
+}
+
+/* Auto-hide on idle */
+.progress-indicator.indicator-idle {
+    opacity: 0.08;
+    pointer-events: none !important;
+    transition: opacity 0.6s ease, transform 0.3s ease;
 }
 
 /* Position-specific entrance animations and padding */
@@ -170,13 +176,14 @@ body.is-iframe .indicator-settings-panel {
 
 
 /* Dark mode support - Automatic */
+/* A background or label colour chosen in the settings also applies on dark slides */
 .progress-indicator.theme-dark {
-    background: rgba(0, 0, 0, 0.8);
+    background: var(--indicator-bg-dark, rgba(0, 0, 0, 0.8));
     border-color: rgba(255, 255, 255, 0.1);
 }
 
 .progress-indicator.theme-dark .section-label {
-    color: #aaa;
+    color: var(--label-color-dark, #aaa);
 }
 
 .progress-indicator.theme-dark .indicator-dot {
@@ -235,15 +242,6 @@ body.is-iframe .indicator-settings-panel {
 .indicator-dot:hover {
     transform: scale(1.5);
     border-color: var(--primary-color); /* Highlight on hover */
-}
-
-.indicator-dot.filled {
-    background-color: var(--completed-color);
-    border-color: var(--completed-color);
-}
-
-.indicator-dot:hover {
-    transform: scale(1.5);
 }
 
 .indicator-dot.filled {
@@ -645,8 +643,14 @@ local js = [====[
         try {
             let isUpcoming = false;
             if (window.self !== window.top) {
-                document.body.classList.add('is-iframe');
-                if (window.frameElement && (window.frameElement.id === 'upcoming-slide' || window.frameElement.classList.contains('future'))) {
+                let frameEl = null;
+                try { frameEl = window.frameElement; } catch (e) { /* cross-origin frame */ }
+                const frameHost = frameEl && frameEl.parentElement;
+                // The speaker view loads its slide frames with a 'receiver' query parameter
+                const inSpeakerView = /[?&]receiver\b/.test(window.location.search) ||
+                    !!(frameHost && (frameHost.id === 'current-slide' || frameHost.id === 'upcoming-slide'));
+                if (inSpeakerView) document.body.classList.add('is-iframe');
+                if (frameEl && (frameEl.id === 'upcoming-slide' || frameEl.classList.contains('future') || (frameHost && frameHost.id === 'upcoming-slide'))) {
                     isUpcoming = true;
                 }
             }
@@ -673,11 +677,12 @@ local js = [====[
         const position = config.position || style.getPropertyValue('--progress-position').trim() || 'bottom';
         indicatorContainer.setAttribute('data-position', position);
         
-        if (position === 'top') {
-            document.querySelector('.reveal').classList.add('has-top-indicator');
-        } else {
-            document.querySelector('.reveal').classList.add('has-bottom-indicator');
+        function setRevealPositionClass(pos) {
+            const revealRoot = document.querySelector('.reveal');
+            revealRoot.classList.toggle('has-top-indicator', pos === 'top');
+            revealRoot.classList.toggle('has-bottom-indicator', pos !== 'top');
         }
+        setRevealPositionClass(position);
 
         const alignment = config.alignment || style.getPropertyValue('--progress-alignment').trim() || 'center';
         indicatorContainer.setAttribute('data-alignment', alignment);
@@ -703,6 +708,21 @@ local js = [====[
         let settingsKey = 'i';    // Key to open/close settings panel
         let toggleKey   = 'x';    // Key to toggle indicator visibility
         let autoHide    = false;  // Fade out indicator when mouse/keyboard idle
+        let userHidden  = false;  // Hidden with the toggle key
+        let colorCustomized = false; // True once the user picks a colour (theme inheritance then stops)
+
+        // Settings are stored per presentation: slide indices from one deck must not apply to another
+        const LEGACY_STORAGE_KEY = 'quarto-indicator-settings';
+        const STORAGE_KEY = LEGACY_STORAGE_KEY + '::' + (window.location.pathname || document.title || 'deck');
+        function storageGet(key) {
+            try { return localStorage.getItem(key); } catch (e) { return null; }
+        }
+        function storageSet(key, value) {
+            try { localStorage.setItem(key, value); } catch (e) { /* storage unavailable */ }
+        }
+        function storageRemove(key) {
+            try { localStorage.removeItem(key); } catch (e) { /* storage unavailable */ }
+        }
         
         document.body.appendChild(indicatorContainer);
 
@@ -730,35 +750,81 @@ local js = [====[
             
             let sections = [];
             let currentSection = null;
+            let activeH1SectionTitle = null;
 
             slides.forEach((slide, index) => {
                 const h1 = slide.querySelector('h1');
                 const h2 = slide.querySelector('h2');
-                const slideTitle = h1 ? h1.innerText : (h2 ? h2.innerText : "");
+                const h3 = slide.querySelector('h3');
                 
-                if (h1 || currentSection === null) {
-                    const sectionTitle = h1 ? h1.innerText : (currentSection ? currentSection.title : "Introduction");
-                    currentSection = {
-                        title: sectionTitle,
-                        dots: []
-                    };
-                    sections.push(currentSection);
-                }
+                const isTitleH1 = h1 && (h1.classList.contains('title') || h1.closest('.quarto-title-block'));
+                const isSectionH1 = h1 && !isTitleH1;
 
                 const isCoverSlide = (index === 0) && (
                     slide.classList.contains('title-slide') || 
                     slide.id === 'title-slide' ||
-                    (slide.querySelector('.quarto-title-block') || slide.querySelector('h1.title'))
+                    isTitleH1
                 );
+
+                const isSectionSlide = (index > 0) && (
+                    slide.classList.contains('section-slide') || 
+                    slide.classList.contains('level1') || 
+                    (slide.classList.contains('title-slide') && !isCoverSlide) ||
+                    isSectionH1
+                );
+
+                const textOfHeading = (el) => el ? (el.textContent || el.innerText || "").trim() : "";
                 
+                if (isSectionH1) {
+                    activeH1SectionTitle = textOfHeading(h1);
+                }
+
+                let sectionTitle = "";
+                if (isSectionH1) {
+                    sectionTitle = textOfHeading(h1);
+                } else if (activeH1SectionTitle) {
+                    sectionTitle = activeH1SectionTitle;
+                } else if (h2) {
+                    sectionTitle = textOfHeading(h2);
+                } else if (h3) {
+                    sectionTitle = textOfHeading(h3);
+                } else if (h1 && !isCoverSlide) {
+                    sectionTitle = textOfHeading(h1);
+                } else if (slide.getAttribute('data-menu-title')) {
+                    sectionTitle = slide.getAttribute('data-menu-title').trim();
+                } else {
+                    sectionTitle = currentSection ? currentSection.title : "";
+                }
+
+                const slideTitle = (h1 && !isCoverSlide && !isTitleH1) ? textOfHeading(h1) : (h2 ? textOfHeading(h2) : (h3 ? textOfHeading(h3) : ""));
+
+                const isSameAsCurrent = currentSection && 
+                    sectionTitle && 
+                    (currentSection.title.toLowerCase().trim() === sectionTitle.toLowerCase().trim());
+
+                if (isSectionH1 || currentSection === null || !isSameAsCurrent) {
+                    if (!isSameAsCurrent) {
+                        currentSection = {
+                            title: sectionTitle,
+                            startIndex: index,
+                            endIndex: index,
+                            dots: []
+                        };
+                        sections.push(currentSection);
+                    }
+                }
+
                 if (hideOnTitle && isCoverSlide) return;
 
                 if (currentSection.startIndex === undefined || index < currentSection.startIndex) currentSection.startIndex = index;
                 if (currentSection.endIndex === undefined || index > currentSection.endIndex) currentSection.endIndex = index;
 
-                if (slide.classList.contains('section-slide') || slide.classList.contains('skip-progress')) return;
+                if (isSectionSlide || slide.classList.contains('skip-progress')) return;
                 
-                if (omittedSlides.has(index)) return;
+                if (omittedSlides.has(index)) {
+                    currentSection.hasOmitted = true;
+                    return;
+                }
 
                 const indices = reveal.getIndices(slide);
                 
@@ -770,6 +836,21 @@ local js = [====[
                 });
             });
 
+            // Ensure standalone section header slides with no sub-slides still get a dot if non-empty title
+            sections.forEach(sec => {
+                if (sec.dots.length === 0 && sec.title && sec.title.trim() !== "" && sec.startIndex !== undefined &&
+                    !sec.hasOmitted && !omittedSlides.has(sec.startIndex)) {
+                    const slide = slides[sec.startIndex];
+                    const indices = slide ? reveal.getIndices(slide) : { h: 0, v: 0 };
+                    sec.dots.push({
+                        index: sec.startIndex,
+                        h: indices.h,
+                        v: indices.v,
+                        title: sec.title
+                    });
+                }
+            });
+
             let renderedSectionCount = 0;
             sections.forEach(section => {
                 if (section.dots.length === 0) return;
@@ -777,30 +858,35 @@ local js = [====[
                 const sectionDiv = document.createElement('div');
                 sectionDiv.className = 'indicator-section';
                 sectionDiv.setAttribute('data-section-index', renderedSectionCount++);
-                sectionDiv.setAttribute('data-start-index', section.startIndex);
-                sectionDiv.setAttribute('data-end-index', section.endIndex);
+                sectionDiv.setAttribute('data-start-index', section.startIndex !== undefined ? section.startIndex : 0);
+                sectionDiv.setAttribute('data-end-index', section.endIndex !== undefined ? section.endIndex : 0);
 
-                const label = document.createElement('div');
-                label.className = 'section-label';
-                label.innerText = section.title;
-                
-                if (isClickable) {
-                    label.style.cursor = 'pointer';
-                    label.style.pointerEvents = 'auto'; 
-                    label.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        e.stopImmediatePropagation();
-                        const target = section.dots[0];
-                        if (target.h !== undefined && target.v !== undefined) {
-                            reveal.slide(target.h, target.v);
-                        } else {
-                            reveal.slide(target.index);
-                        }
-                    }, true);
+                if (section.title && section.title.trim() !== '') {
+                    const label = document.createElement('div');
+                    label.className = 'section-label';
+                    label.textContent = section.title;
+                    label.innerText = section.title;
+                    
+                    if (isClickable) {
+                        label.style.cursor = 'pointer';
+                        label.style.pointerEvents = 'auto'; 
+                        label.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.stopImmediatePropagation();
+                            const target = section.dots && section.dots[0];
+                            if (target) {
+                                if (target.h !== undefined && target.v !== undefined) {
+                                    reveal.slide(target.h, target.v);
+                                } else {
+                                    reveal.slide(target.index);
+                                }
+                            }
+                        }, true);
+                    }
+                    
+                    sectionDiv.appendChild(label);
                 }
-                
-                sectionDiv.appendChild(label);
 
                 const dotsContainer = document.createElement('div');
                 dotsContainer.className = 'dots-container';
@@ -830,7 +916,7 @@ local js = [====[
                     }
 
                     dot.addEventListener('mouseenter', (e) => {
-                        if (!showTooltips) return;
+                        if (!showTooltips || !tooltip) return;
                         tooltip.innerText = dotData.title;
                         tooltip.classList.add('visible');
                         const rect = dot.getBoundingClientRect();
@@ -849,7 +935,7 @@ local js = [====[
                     });
                     
                     dot.addEventListener('mouseleave', () => {
-                        tooltip.classList.remove('visible');
+                        if (tooltip) tooltip.classList.remove('visible');
                     });
 
                     dotsContainer.appendChild(dot);
@@ -873,13 +959,7 @@ local js = [====[
         // Scans common Reveal.js CSS variables to auto-seed --primary-color
         // Only runs when no user-saved color exists
         function inheritThemeColor() {
-            const saved = localStorage.getItem('quarto-indicator-settings');
-            if (saved) {
-                try {
-                    const s = JSON.parse(saved);
-                    if (s.primaryColor) return; // User has an explicit preference
-                } catch(e) {}
-            }
+            if (colorCustomized) return; // User has an explicit preference
             const cs = getComputedStyle(document.documentElement);
             const candidates = [
                 '--r-link-color',        // Reveal.js default
@@ -942,6 +1022,8 @@ local js = [====[
         }
 
         // Override or restore Reveal's slide number text
+        let slideNumberOriginal = null;
+        let slideNumberOverride = null;
         function updateSlideNumber(currentIndex) {
             const el = document.querySelector('.reveal .slide-number');
             if (!el) return;
@@ -949,11 +1031,14 @@ local js = [====[
                 const pos = getDotPosition(currentIndex);
                 const total = getTotalDots();
                 if (total > 0) {
-                    el.textContent = `${pos} / ${total}`;
+                    // Remember what Reveal.js wrote, so it can be put back
+                    if (el.textContent !== slideNumberOverride) slideNumberOriginal = el.innerHTML;
+                    slideNumberOverride = `${pos} / ${total}`;
+                    el.textContent = slideNumberOverride;
                 }
-            } else {
-                // Let Reveal.js re-generate the original number
-                el.textContent = '';
+            } else if (slideNumberOverride !== null) {
+                if (el.textContent === slideNumberOverride && slideNumberOriginal !== null) el.innerHTML = slideNumberOriginal;
+                slideNumberOverride = null;
             }
         }
 
@@ -967,8 +1052,6 @@ local js = [====[
             const allSlides = Array.from(document.querySelectorAll('.reveal .slides section:not(.stack)'));
             const currentIndex = allSlides.indexOf(currentSlide);
             
-            console.log(`DEBUG: updateDots - Current: ${currentIndex}`);
-            
             // Hide on title slide logic + .hide-progress support + manual hide
             const isExplicitlyHidden = currentSlide && (
                 currentSlide.classList.contains('hide-progress') || 
@@ -978,7 +1061,7 @@ local js = [====[
             // Check if hidden by index in settings
             const isManuallyHidden = hiddenIndicatorSlides.has(currentIndex);
 
-            if ((hideOnTitle && currentIndex === 0) || isExplicitlyHidden || isManuallyHidden) {
+            if (userHidden || (hideOnTitle && currentIndex === 0) || isExplicitlyHidden || isManuallyHidden) {
                 indicatorContainer.classList.remove('visible');
                 indicatorContainer.style.pointerEvents = 'none';
 
@@ -996,7 +1079,8 @@ local js = [====[
                 // Uses a data attribute to track which elements were modified
                 document.querySelectorAll('[data-pi-original-position]').forEach(el => {
                     const orig = el.getAttribute('data-pi-original-position');
-                    el.style.setProperty('position', orig);
+                    if (orig) el.style.setProperty('position', orig);
+                    else el.style.removeProperty('position');
                     el.removeAttribute('data-pi-original-position');
                     el.style.removeProperty('top');
                     el.style.removeProperty('bottom');
@@ -1027,24 +1111,25 @@ local js = [====[
                 
                 // Theme-agnostic: find ALL position:fixed elements and convert them
                 // This works across any Reveal.js theme (clean-revealjs, simple, moon, etc.)
-                document.querySelectorAll('body *').forEach(el => {
-                    // Skip the indicator itself and its children
-                    if (indicatorContainer.contains(el)) return;
-                    // Skip elements inside .reveal .slides (actual slide content)
-                    if (el.closest('.slides')) return;
-                    // Skip tooltip and settings panel - they need position:fixed to render properly
-                    if (el.classList.contains('indicator-tooltip')) return;
-                    if (el.classList.contains('indicator-settings-panel')) return;
-                    
-                    const computed = window.getComputedStyle(el);
-                    if (computed.position === 'fixed') {
-                        // Save original position so we can restore it later
-                        if (!el.hasAttribute('data-pi-original-position')) {
-                            el.setAttribute('data-pi-original-position', 'fixed');
+                // The walker skips whole subtrees that never need it: slide content, the indicator,
+                // its tooltip and settings panel (they need position:fixed to render properly)
+                const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT, {
+                    acceptNode(el) {
+                        if (el === indicatorContainer || el.classList.contains('slides') ||
+                            el.classList.contains('indicator-tooltip') || el.classList.contains('indicator-settings-panel')) {
+                            return NodeFilter.FILTER_REJECT;
                         }
-                        el.style.setProperty('position', 'absolute', 'important');
+                        return NodeFilter.FILTER_ACCEPT;
                     }
                 });
+                for (let el = walker.nextNode(); el; el = walker.nextNode()) {
+                    if (el.hasAttribute('data-pi-original-position')) continue;
+                    if (window.getComputedStyle(el).position === 'fixed') {
+                        // Save the original inline position so it can be restored later
+                        el.setAttribute('data-pi-original-position', el.style.getPropertyValue('position') || '');
+                        el.style.setProperty('position', 'absolute', 'important');
+                    }
+                }
                 
                 // Remove legacy padding if it existed
                 revealEl.style.removeProperty('padding-top');
@@ -1074,13 +1159,27 @@ local js = [====[
                 }
             });
 
-            // 2. Identify Active Section using Range Logic (Robust)
+            // 2. Identify Active Section using Range Logic + Dot Ownership
             document.querySelectorAll('.indicator-section').forEach((sectionDiv, idx) => {
                 const start = parseInt(sectionDiv.getAttribute('data-start-index'));
                 const end = parseInt(sectionDiv.getAttribute('data-end-index'));
                 
-                // If current index is within this section's range
-                if (currentIndex >= start && currentIndex <= end) {
+                let isActive = false;
+                // Check if current slide index matches any dot inside this section
+                const dots = sectionDiv.querySelectorAll('.indicator-dot');
+                dots.forEach(dot => {
+                    const dotIdx = parseInt(dot.getAttribute('data-slide-index'));
+                    if (dotIdx === currentIndex) {
+                        isActive = true;
+                    }
+                });
+
+                // Also active if currentIndex falls within start-end range (e.g. on a section header slide)
+                if (!isNaN(start) && !isNaN(end) && currentIndex >= start && currentIndex <= end) {
+                    isActive = true;
+                }
+
+                if (isActive) {
                     sectionDiv.classList.add('active');
                 } else {
                     sectionDiv.classList.remove('active');
@@ -1100,6 +1199,7 @@ local js = [====[
             // This is usually the 'Tools' or 'Custom' panel
             const panels = document.querySelectorAll('.slide-menu-panel');
             let targetPanel = null;
+            let li = null;
             
             panels.forEach(p => {
                 if (p.getAttribute('data-panel') !== 'Slides') {
@@ -1139,7 +1239,7 @@ local js = [====[
                 
                 if (targetPanel.querySelector('.progress-settings-item')) return;
 
-                const li = document.createElement('li');
+                li = document.createElement('li');
                 li.className = 'slide-tool-item progress-settings-item'; // Match 'slide-tool-item' class
                 li.setAttribute('data-item', 'custom');
                 
@@ -1381,6 +1481,7 @@ local js = [====[
                 setTimeout(() => {
                     container.setAttribute('data-position', newPos);
                     root.style.setProperty('--progress-position', newPos);
+                    setRevealPositionClass(newPos);
                     
                     // Force the new position's off-screen state before entering
                     const enterStart = newPos === 'top' ? 'translateY(-100%)' : 'translateY(100%)';
@@ -1390,10 +1491,11 @@ local js = [====[
                     // Force reflow to apply the instant repositioning
                     container.offsetHeight;
                     
-                    // Re-enable transition and animate entrance
+                    // Re-enable transition and let the classes decide: it enters only if
+                    // the current slide shows the indicator (no inline opacity left behind)
                     container.style.transition = '';
-                    container.style.transform = 'translateY(0)';
-                    container.style.opacity = '1';
+                    container.style.removeProperty('transform');
+                    container.style.removeProperty('opacity');
                     
                     // Re-apply viewport resize logic
                     updateDots();
@@ -1461,12 +1563,6 @@ local js = [====[
             colorPicker.value = val;
             colorValueDisplay.innerText = val;
             colorLabel.innerText = colorMode === 'primary' ? 'Active Color' : 'Inactive Color';
-
-            // Highlight appropriate preset if matches
-            panel.querySelectorAll('.indicator-color-btn').forEach(btn => {
-                const btnColor = btn.getAttribute('data-color').toLowerCase();
-                btn.classList.toggle('active', btnColor === val.toLowerCase());
-            });
         }
 
         // 3b. Background Color Picker
@@ -1484,6 +1580,7 @@ local js = [====[
         bgColorPicker.addEventListener('input', (e) => {
             const hex = e.target.value;
             root.style.setProperty('--indicator-bg', hex);
+            root.style.setProperty('--indicator-bg-dark', hex);
             bgColorValueDisplay.innerText = hex;
             saveSettings();
         });
@@ -1515,11 +1612,14 @@ local js = [====[
             `;
             
             swatch.addEventListener('click', () => {
+                colorCustomized = true;
                 root.style.setProperty('--primary-color', t.primary);
                 root.style.setProperty('--completed-color', t.primary);
                 root.style.setProperty('--inactive-color', t.inactive);
                 root.style.setProperty('--indicator-bg', t.bg);
+                root.style.setProperty('--indicator-bg-dark', t.bg);
                 root.style.setProperty('--label-color', t.label);
+                root.style.setProperty('--label-color-dark', t.label);
                 root.style.setProperty('--dot-size', t.size);
                 
                 // Update dots immediately
@@ -1549,6 +1649,7 @@ local js = [====[
         // 4. Color Logic (Unified)
         
         function applyColor(color, modeOverride) {
+            colorCustomized = true;
             const mode = modeOverride || colorMode;
             if (mode === 'primary') {
                 root.style.setProperty('--primary-color', color);
@@ -1577,12 +1678,6 @@ local js = [====[
             applyColor(e.target.value);
         });
 
-        // Preset Events
-        panel.querySelectorAll('.indicator-color-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                applyColor(e.target.getAttribute('data-color'));
-            });
-        });
         // 5. Size
         const sizeSlider = panel.querySelector('#indicatorSizeSlider');
         sizeSlider.addEventListener('input', (e) => {
@@ -1645,8 +1740,9 @@ local js = [====[
                 const h1 = slide.querySelector('h1');
                 const h2 = slide.querySelector('h2');
                 const h3 = slide.querySelector('h3');
-                const title = slide.getAttribute('data-menu-title') || 
-                              (h1 ? h1.innerText : (h2 ? h2.innerText : (h3 ? h3.innerText : `Slide ${idx + 1}`)));
+                const rawTitle = slide.getAttribute('data-menu-title') || 
+                              (h1 ? (h1.innerText || h1.textContent) : (h2 ? (h2.innerText || h2.textContent) : (h3 ? (h3.innerText || h3.textContent) : `Slide ${idx + 1}`)));
+                const title = (rawTitle || `Slide ${idx + 1}`).trim();
                 
                 const item = document.createElement('div');
                 item.style.display = 'flex';
@@ -1729,47 +1825,23 @@ local js = [====[
         let idleTimer = null;
         const IDLE_DELAY = 2500; // ms before fading
 
-        function applyAutoHide() {
-            // Ensure the container has a CSS transition
-            container.style.transition = 'opacity 0.6s ease, transform 0.3s ease';
-            if (!autoHide) {
-                clearTimeout(idleTimer);
-                container.style.opacity = '';
-                container.style.pointerEvents = '';
-                return;
-            }
-            // Start idle timer
-            function resetIdle() {
-                clearTimeout(idleTimer);
-                container.style.opacity = '1';
-                container.style.pointerEvents = 'auto';
-                idleTimer = setTimeout(() => {
-                    // Don't hide if settings panel is open
-                    if (!panel.classList.contains('visible')) {
-                        container.style.opacity = '0.08';
-                        container.style.pointerEvents = 'none';
-                    }
-                }, IDLE_DELAY);
-            }
-            document.addEventListener('mousemove', resetIdle);
-            document.addEventListener('keydown', resetIdle);
-            document.addEventListener('mousedown', resetIdle);
-            // Kick off immediately
-            resetIdle();
-            // Store cleanup so we can remove listeners when disabled
-            autoHideToggle._cleanup = () => {
-                clearTimeout(idleTimer);
-                document.removeEventListener('mousemove', resetIdle);
-                document.removeEventListener('keydown', resetIdle);
-                document.removeEventListener('mousedown', resetIdle);
-            };
+        // Registered once; does nothing but un-fade while auto-hide is off. The fade is a class,
+        // so it never overrides whether the current slide shows the indicator.
+        function resetIdle() {
+            clearTimeout(idleTimer);
+            container.classList.remove('indicator-idle');
+            if (!autoHide) return;
+            idleTimer = setTimeout(() => {
+                // Don't hide if settings panel is open
+                if (!panel.classList.contains('visible')) container.classList.add('indicator-idle');
+            }, IDLE_DELAY);
         }
+        function applyAutoHide() {
+            resetIdle();
+        }
+        ['mousemove', 'keydown', 'mousedown'].forEach(ev => document.addEventListener(ev, resetIdle));
 
         autoHideToggle.addEventListener('change', (e) => {
-            if (!autoHide && autoHideToggle._cleanup) {
-                autoHideToggle._cleanup();
-                autoHideToggle._cleanup = null;
-            }
             autoHide = e.target.checked;
             applyAutoHide();
             saveSettings();
@@ -1892,26 +1964,30 @@ local js = [====[
             const size = getComputedStyle(root).getPropertyValue('--dot-size').trim();
             const spacing = getComputedStyle(root).getPropertyValue('--section-spacing').trim();
             
-            const yamlConfig = `
-# Quarto Progress Indicator Configuration
-# Paste this into your _quarto.yml file or inside a <style> block
-
-# Option 1: YAML (for basic settings)
-progress-indicator:
-  position: ${pos}
-  alignment: ${align}
-  style: ${style}
-  hide-on-title: ${!hideOnTitle}
-
-# Option 2: CSS (for colors/sizes)
-/* Add to your CSS or styling block */
-:root {
-  --primary-color: ${primary};
-  --inactive-color: ${inactive};
-  --dot-size: ${size};
-  --section-spacing: ${spacing};
-}
-`;
+            // Built line by line: Quarto indents the embedded script, which would
+            // indent a multi-line template literal too and break the YAML
+            const yamlConfig = [
+                '# Quarto Progress Indicator Configuration',
+                '',
+                '# Option 1: YAML (for basic settings), in _quarto.yml or the document header',
+                'format:',
+                '  revealjs:',
+                '    progress-indicator:',
+                `      position: ${pos}`,
+                `      alignment: ${align}`,
+                `      style: ${style}`,
+                `      hide-on-title: ${hideOnTitle}`,
+                `      tooltips: ${showTooltips}`,
+                '',
+                '# Option 2: CSS (for colors/sizes), in your CSS file or a <style> block',
+                ':root {',
+                `  --primary-color: ${primary};`,
+                `  --inactive-color: ${inactive};`,
+                `  --dot-size: ${size};`,
+                `  --section-spacing: ${spacing};`,
+                '}',
+                ''
+            ].join('\n');
             navigator.clipboard.writeText(yamlConfig).then(() => {
                 const originalText = exportBtn.innerText;
                 exportBtn.innerText = '✅ Copied!';
@@ -1942,21 +2018,7 @@ progress-indicator:
         exportJsonBtn.title = 'Download current settings as a JSON file';
         
         exportJsonBtn.addEventListener('click', () => {
-            const settings = {
-                position: container.getAttribute('data-position'),
-                alignment: container.getAttribute('data-alignment'),
-                primaryColor: getComputedStyle(root).getPropertyValue('--primary-color').trim(),
-                inactiveColor: getComputedStyle(root).getPropertyValue('--inactive-color').trim(),
-                bgColor: getComputedStyle(root).getPropertyValue('--indicator-bg').trim(),
-                size: getComputedStyle(root).getPropertyValue('--dot-size').trim(),
-                spacing: getComputedStyle(root).getPropertyValue('--section-spacing').trim(),
-                style: container.getAttribute('data-style') || 'dots',
-                animation: panel.querySelector('.indicator-btn-group[data-setting="animation"] .active')?.getAttribute('data-value') || 'none',
-                theme: themeContainer.querySelector('.theme-swatch.active')?.getAttribute('data-value') || 'none',
-                hideOnTitle: hideOnTitle,
-                hiddenIndicatorSlides: Array.from(hiddenIndicatorSlides),
-                omittedSlides: Array.from(omittedSlides)
-            };
+            const settings = collectSettings();
             const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -1984,15 +2046,18 @@ progress-indicator:
             if (!file) return;
             const reader = new FileReader();
             reader.onload = (event) => {
+                let message = '✅ Imported';
                 try {
                     const settings = JSON.parse(event.target.result);
                     applySettings(settings);
                     saveSettings();
-                    alert('Settings imported successfully!');
                 } catch (err) {
                     console.error('Failed to parse JSON:', err);
-                    alert('Invalid JSON file.');
+                    message = '❌ Invalid JSON file';
                 }
+                importJsonBtn.innerText = message;
+                setTimeout(() => { importJsonBtn.innerText = '📂 Import JSON'; }, 2000);
+                fileInput.value = '';
             };
             reader.readAsText(file);
         });
@@ -2011,8 +2076,8 @@ progress-indicator:
         infoClose.addEventListener('click', () => infoOverlay.classList.remove('visible'));
 
             // 8. Persistence (LocalStorage)
-            function saveSettings() {
-                const settings = {
+            function collectSettings() {
+                return {
                     position: container.getAttribute('data-position'),
                     alignment: container.getAttribute('data-alignment'),
                     primaryColor: getComputedStyle(root).getPropertyValue('--primary-color').trim(),
@@ -2029,10 +2094,15 @@ progress-indicator:
                     settingsKey: settingsKey,
                     toggleKey: toggleKey,
                     autoHide: autoHide,
+                    labelColor: getComputedStyle(root).getPropertyValue('--label-color').trim(),
+                    colorCustomized: colorCustomized,
                     hiddenIndicatorSlides: Array.from(hiddenIndicatorSlides),
                     omittedSlides: Array.from(omittedSlides)
                 };
-                localStorage.setItem('quarto-indicator-settings', JSON.stringify(settings));
+            }
+
+            function saveSettings() {
+                storageSet(STORAGE_KEY, JSON.stringify(collectSettings()));
             }
 
             function applySettings(s) {
@@ -2040,6 +2110,7 @@ progress-indicator:
                 if (s.position) {
                     container.setAttribute('data-position', s.position);
                     root.style.setProperty('--progress-position', s.position);
+                    setRevealPositionClass(s.position);
                     // Update UI buttons
                     panel.querySelectorAll('.indicator-btn-group[data-setting="position"] .indicator-btn-option').forEach(btn => {
                         btn.classList.toggle('active', btn.getAttribute('data-value') === s.position);
@@ -2061,6 +2132,9 @@ progress-indicator:
                         swatch.classList.toggle('active', swatch.getAttribute('data-value') === s.theme);
                     });
                 }
+                // Settings saved before this flag existed: a stored colour was a deliberate choice
+                if (s.colorCustomized !== undefined) colorCustomized = !!s.colorCustomized;
+                else if (s.primaryColor) colorCustomized = true;
                 if (s.primaryColor) {
                     root.style.setProperty('--primary-color', s.primaryColor);
                     root.style.setProperty('--completed-color', s.primaryColor);
@@ -2073,9 +2147,11 @@ progress-indicator:
                 }
                 if (s.labelColor) {
                     root.style.setProperty('--label-color', s.labelColor);
+                    root.style.setProperty('--label-color-dark', s.labelColor);
                 }
                 if (s.bgColor) {
                     root.style.setProperty('--indicator-bg', s.bgColor);
+                    root.style.setProperty('--indicator-bg-dark', s.bgColor);
                     const bgPicker = panel.querySelector('#indicatorBgColorPicker');
                     const bgDisplay = panel.querySelector('#bgColorValueDisplay');
                     if (bgPicker) bgPicker.value = s.bgColor;
@@ -2170,13 +2246,24 @@ progress-indicator:
             }
 
             function loadSettings() {
-                const saved = localStorage.getItem('quarto-indicator-settings');
-                if (saved) {
-                    try {
+                try {
+                    const saved = storageGet(STORAGE_KEY);
+                    if (saved) {
                         applySettings(JSON.parse(saved));
-                    } catch (e) {
-                        console.error('Error loading settings:', e);
+                        return;
                     }
+                    // Older versions shared one key between all presentations: keep the look,
+                    // but not the per-slide lists, which belong to another deck
+                    const legacy = storageGet(LEGACY_STORAGE_KEY);
+                    if (legacy) {
+                        const s = JSON.parse(legacy);
+                        delete s.hiddenSlides;
+                        delete s.hiddenIndicatorSlides;
+                        delete s.omittedSlides;
+                        applySettings(s);
+                    }
+                } catch (e) {
+                    console.error('Error loading settings:', e);
                 }
             }
             
@@ -2194,15 +2281,25 @@ progress-indicator:
 
             // 8.5 Reset Button Logic
             const resetBtn = panel.querySelector('#indicatorResetBtn');
+            let resetArmed = null;
             resetBtn.addEventListener('click', () => {
-                if (confirm('Are you sure you want to reset all settings to defaults?')) {
-                    localStorage.removeItem('quarto-indicator-settings');
-                    window.location.reload(); // Simplest way to restore all defaults
+                if (!resetArmed) {
+                    resetBtn.innerText = 'Click again to reset all settings';
+                    resetArmed = setTimeout(() => {
+                        resetArmed = null;
+                        resetBtn.innerText = '🔄 Reset to Defaults';
+                    }, 3000);
+                    return;
                 }
+                clearTimeout(resetArmed);
+                storageRemove(STORAGE_KEY);
+                window.location.reload(); // Simplest way to restore all defaults
             });
             window.addEventListener('keydown', (e) => {
                 // Ignore if typing in an input text field
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+                // Leave browser and system shortcuts (Cmd+I, Ctrl+X...) alone
+                if (e.metaKey || e.ctrlKey || e.altKey) return;
                 
                 if (e.key.toLowerCase() === settingsKey) {
                     const isVisible = panel.classList.toggle('visible');
@@ -2226,11 +2323,8 @@ progress-indicator:
                     }
                 }
                 if (e.key.toLowerCase() === toggleKey) {
-                    container.classList.toggle('visible');
-                    // Ensure it stays hidden/visible by overriding logic efficiently
-                    const isVisible = container.classList.contains('visible');
-                    container.style.opacity = isVisible ? '1' : '0';
-                    container.style.pointerEvents = isVisible ? 'auto' : 'none';
+                    userHidden = !userHidden;
+                    updateDots();
                 }
             });
 

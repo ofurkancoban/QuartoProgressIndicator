@@ -103,5 +103,138 @@
     "title": "Quarto Progress Indicator",
     "section": "Thank You!",
     "text": "Thank You!\nCheck out my other projects at: github.com/ofurkancoban"
+  },
+  {
+    "objectID": "test_no_section.html#slayt-1-giriş",
+    "href": "test_no_section.html#slayt-1-giriş",
+    "title": "Ara Başlıksız Test Sunumu",
+    "section": "Slayt 1: Giriş",
+    "text": "Slayt 1: Giriş\nBu sunumda hiçbir ara başlık (H1 / #) kullanılmamıştır.\n\n\n\n\n\n\nNote\n\n\nİlerleme çubuğu (progress indicator) herhangi bir hata vermeden çalışmalıdır."
+  },
+  {
+    "objectID": "test_no_section.html#slayt-2-içerik-ve-detaylar",
+    "href": "test_no_section.html#slayt-2-içerik-ve-detaylar",
+    "title": "Ara Başlıksız Test Sunumu",
+    "section": "Slayt 2: İçerik ve Detaylar",
+    "text": "Slayt 2: İçerik ve Detaylar\n\nAra başlık içermeyen sunumlarda bölüm etiketi gizlenir.\nNoktalar (dots) tüm slaytları doğru sırayla temsil eder.\ni tuşuna basarak ayarlar menüsünü açabilirsiniz."
+  },
+  {
+    "objectID": "test_no_section.html#slayt-3-grafik-ve-tablo-örneği",
+    "href": "test_no_section.html#slayt-3-grafik-ve-tablo-örneği",
+    "title": "Ara Başlıksız Test Sunumu",
+    "section": "Slayt 3: Grafik ve Tablo Örneği",
+    "text": "Slayt 3: Grafik ve Tablo Örneği\n\n\n\nÖzellik\nDurum\n\n\n\n\nAra Başlıksız Destek\n✅ Çalışıyor\n\n\nTemalar\n✅ Aktif\n\n\nOtomatik Gizleme\n✅ Aktif"
+  },
+  {
+    "objectID": "test_no_section.html#slayt-4-sonuç",
+    "href": "test_no_section.html#slayt-4-sonuç",
+    "title": "Ara Başlıksız Test Sunumu",
+    "section": "Slayt 4: Sonuç",
+    "text": "Slayt 4: Sonuç\nSunum başarıyla tamamlandı!"
+  },
+  {
+    "objectID": "example.html#extension-overview",
+    "href": "example.html#extension-overview",
+    "title": "Quarto Progress Indicator",
+    "section": "Extension Overview",
+    "text": "Extension Overview\nThis extension adds a premium, interactive progress indicator to your Quarto presentations.\n\n\n\n\n\n\nNative Implementation\n\n\nBuilt fully native as a Quarto Lua Filter — zero external dependencies required."
+  },
+  {
+    "objectID": "example.html#key-features",
+    "href": "example.html#key-features",
+    "title": "Quarto Progress Indicator",
+    "section": "Key Features",
+    "text": "Key Features\n\nSection Grouping: Group slides neatly under section headers.\nSingle-Slide Sections: Seamless handling for single-slide sections (e.g. References, Thank You).\nAuto-hide & Idle Fade: Fades out automatically when presentation is idle.\nTheme Inheritance: Automatically adopts accent colors from your Reveal.js theme."
+  },
+  {
+    "objectID": "example.html#color-palettes",
+    "href": "example.html#color-palettes",
+    "title": "Quarto Progress Indicator",
+    "section": "Color Palettes",
+    "text": "Color Palettes\nChoose from 8 built-in palettes (4 light, 4 dark) or customize your own:\n\n\nLight Themes\n\n🌊 Ocean — Deep Blue\n🌿 Emerald — Muted Green\n🌅 Sunset — Warm Orange\n💜 Lavender — Soft Purple\n\n\nDark Themes\n\n🧛 Dracula — Purple Night\n❄️ Nord — Arctic Blue\n🌻 Gruvbox — Warm Dark\n🌙 Tokyo Night — Neon Blue"
+  },
+  {
+    "objectID": "example.html#custom-color-persistence",
+    "href": "example.html#custom-color-persistence",
+    "title": "Quarto Progress Indicator",
+    "section": "Custom Color Persistence",
+    "text": "Custom Color Persistence\nAll visual settings persist across page reloads via localStorage:\n\nActive dot color\nInactive dot color\nSection label color\nBackground blur & opacity"
+  },
+  {
+    "objectID": "example.html#interactive-menu-i",
+    "href": "example.html#interactive-menu-i",
+    "title": "Quarto Progress Indicator",
+    "section": "Interactive Menu (i)",
+    "text": "Interactive Menu (i)\nPress i at any time to open the Live Settings Panel:\n\nChange position (Top / Bottom)\nChange progress style (Dots / Progress Bar)\nToggle tooltips & active animations\nManage per-slide dot & bar visibility"
+  },
+  {
+    "objectID": "example.html#useful-shortcuts",
+    "href": "example.html#useful-shortcuts",
+    "title": "Quarto Progress Indicator",
+    "section": "Useful Shortcuts",
+    "text": "Useful Shortcuts\n\n\n\nShortcut\nAction\n\n\n\n\ni\nOpen / Close Settings Panel\n\n\nx\nToggle Progress Indicator Visibility"
+  },
+  {
+    "objectID": "example.html#references-1",
+    "href": "example.html#references-1",
+    "title": "Quarto Progress Indicator",
+    "section": "References",
+    "text": "References\n\n\nQuarto: Academic Publishing System for Pandoc.\nReveal.js: HTML Presentation Framework.\nLua: Lightweight, high-level embeddable scripting language."
+  },
+  {
+    "objectID": "example.html#thank-you-1",
+    "href": "example.html#thank-you-1",
+    "title": "Quarto Progress Indicator",
+    "section": "Thank You!",
+    "text": "Thank You!\n\n\n\n\n\n\nGet Started Today\n\n\nAdd the extension to your project with: quarto add ofurkancoban/QuartoProgressIndicator\n\n\n\nView Project on GitHub"
+  },
+  {
+    "objectID": "test_grouping_slides.html#giriş",
+    "href": "test_grouping_slides.html#giriş",
+    "title": "Aynı Başlık Gruplama Testi",
+    "section": "Giriş",
+    "text": "Giriş\nBu, Giriş konusunun ilk slaytıdır.\n\nİlerleme çubuğunda “GİRİŞ” başlığı görünecektir."
+  },
+  {
+    "objectID": "test_grouping_slides.html#giriş-1",
+    "href": "test_grouping_slides.html#giriş-1",
+    "title": "Aynı Başlık Gruplama Testi",
+    "section": "Giriş",
+    "text": "Giriş\nBu da aynı Giriş başlığına sahip ikinci slayttır.\n\n“GİRİŞ” etiketi altında 2 adet nokta (dot) bir arada gruplanmalıdır."
+  },
+  {
+    "objectID": "test_grouping_slides.html#metodoloji",
+    "href": "test_grouping_slides.html#metodoloji",
+    "title": "Aynı Başlık Gruplama Testi",
+    "section": "Metodoloji",
+    "text": "Metodoloji\nBu farklı bir başlığa sahip slayttır.\n\n“METODOLOJİ” etiketi altında tek bir nokta görünmelidir."
+  },
+  {
+    "objectID": "test_grouping_slides.html#sonuçlar",
+    "href": "test_grouping_slides.html#sonuçlar",
+    "title": "Aynı Başlık Gruplama Testi",
+    "section": "Sonuçlar",
+    "text": "Sonuçlar\nSonuçlar bölümünün birinci slaytı."
+  },
+  {
+    "objectID": "test_grouping_slides.html#sonuçlar-1",
+    "href": "test_grouping_slides.html#sonuçlar-1",
+    "title": "Aynı Başlık Gruplama Testi",
+    "section": "Sonuçlar",
+    "text": "Sonuçlar\nSonuçlar bölümünün ikinci slaytı.\n\n“SONUÇLAR” etiketi altında 2 adet nokta gruplanmalıdır."
+  },
+  {
+    "objectID": "test_grouping_slides.html#kaynakça",
+    "href": "test_grouping_slides.html#kaynakça",
+    "title": "Aynı Başlık Gruplama Testi",
+    "section": "Kaynakça",
+    "text": "Kaynakça\nTek slaytlık Kaynakça bölümü."
+  },
+  {
+    "objectID": "test_grouping_slides.html#teşekkürler",
+    "href": "test_grouping_slides.html#teşekkürler",
+    "title": "Aynı Başlık Gruplama Testi",
+    "section": "Teşekkürler",
+    "text": "Teşekkürler\nTek slaytlık Teşekkürler bölümü."
   }
 ]
